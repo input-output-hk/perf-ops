@@ -19,7 +19,7 @@
     "1p0b7xk22f3mfcilb4ia3mzj39nr6yqv-jormungandr-v1-eu-west-1": {
       "task_id": "import-snap-0e33698cffd8c8103",
       "snapshot_id": "snap-0875f911ebf2e5ca5",
-      "ami_id": "ami-0dbb98881ccd94b8b"
+      "ami_id": "ami-038b65c3f1b83651f"
     },
     "1p0b7xk22f3mfcilb4ia3mzj39nr6yqv-jormungandr-v1-eu-central-1": {
       "ami_id": "ami-00128ed526e64b22f"

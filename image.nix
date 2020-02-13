@@ -1,8 +1,8 @@
 let
-  sources = import ../nix/sources.nix;
+  sources = import ./nix/sources.nix;
   eval-config = import (sources.nixpkgs + "/nixos/lib/eval-config.nix");
   nixpkgs = sources.nixpkgs;
-  pkgs = import ../nix { };
+  pkgs = import ./nix { };
   inherit (pkgs) lib;
 in {
   ami = (eval-config {

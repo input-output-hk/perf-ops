@@ -1,14 +1,14 @@
 { lib, pkgs, ... }:
 let
   inherit (import ./image.nix) ami;
-	images = (__fromJSON (__readFile ./state.json)).images;
-	amiName = lib.elemAt (lib.splitString "/" (__unsafeDiscardStringContext (import ./image.nix).ami.outPath)) 3;
+  images = (__fromJSON (__readFile ./state.json)).images;
+  amiName = lib.elemAt (lib.splitString "/" (__unsafeDiscardStringContext (import ./image.nix).ami.outPath)) 3;
   passive = {
     ami = images."${amiName}-eu-west-1".ami_id;
     #spot_price = "0.00";                                # Default is on-demand price
     instance_type = "t3a.small";
     security_groups = [ "allow-ssh" "allow-egress" ];
-	  root_block_device.volume_size = 4;
+    root_block_device.volume_size = 4;
     tags = {
       Name = "passive";
     };

@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -I nixpkgs=../nix -p awscli -p qemu -p crystal -i crystal
+#!nix-shell -I nixpkgs=./nix -p awscli -p qemu -p crystal -i crystal
 
 require "json"
 require "option_parser"
