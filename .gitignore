@@ -1,0 +1,7 @@
+secret*
+*tfstate*
+tf_key*
+*.tf.json
+.terraform/
+.envrc
+globals.nix
