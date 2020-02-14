@@ -1,16 +1,4 @@
 {
-    "cardano-wallet": {
-        "branch": "master",
-        "description": "Official Wallet Backend & API for Cardano decentralized",
-        "homepage": null,
-        "owner": "input-output-hk",
-        "repo": "cardano-wallet",
-        "rev": "66c89a9e682c902e0663f93feab6b69f75358d27",
-        "sha256": "060cz9lc266z5r8y9gg20isimafk7nbj7bcm05k5qjs3cc8hw49y",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/cardano-wallet/archive/66c89a9e682c902e0663f93feab6b69f75358d27.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "iohk-nix": {
         "branch": "jormungandr-0.8.9",
         "description": "nix scripts shared across projects",
@@ -33,18 +21,6 @@
         "sha256": "0ss414zla7cakiafdq3m19zsbi1p876l8lsamdga65dqbmq2qfn1",
         "type": "tarball",
         "url": "https://github.com/input-output-hk/iohk-ops/archive/e8f6fa58f3717cf6db64f268cfefcd30413bd3f0.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "jack-williamson": {
-        "branch": "master",
-        "description": "Like mrVanDalo/terranix but trying to do less",
-        "homepage": "",
-        "owner": "kreisys",
-        "repo": "jack-williamson",
-        "rev": "5d914c82a5a4ac41fc9d2229e19c8974e0d9a58c",
-        "sha256": "0a64lxj8w6g4xls3d0c90g8kfq9xk61im3jfi9x74qa39dv1rnq3",
-        "type": "tarball",
-        "url": "https://github.com/kreisys/jack-williamson/archive/5d914c82a5a4ac41fc9d2229e19c8974e0d9a58c.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "jormungandr-faucet": {

@@ -1,17 +1,9 @@
-{ pkgs ?  import ./nix {}
-, makeWrapper ? pkgs.makeWrapper
-, awscli ? pkgs.awscli
-, nix ? pkgs.nix
-}: pkgs.crystal.buildCrystalPackage {
-  name = "upload";
-  version = "0.0.1";
-  src = pkgs.lib.cleanSource ./.;
-  crystalBinaries.upload.src = "./upload.cr";
+{ mkImage ? (import ./nix { }).packages.mkImage }: rec {
+  images = {
+    jormungandr = mkImage "jormungandr-v1" {
+      container-modules = [ ./container-modules/jormungandr-container.nix ];
+    };
+  };
 
-  buildInputs = [ makeWrapper ];
-
-  postInstall = ''
-    wrapProgram $out/bin/upload \
-      --set PATH ${pkgs.lib.makeBinPath [ awscli nix ]}
-  '';
+  amis = __mapAttrs (k: v: v.config.system.build.amazonImage) images;
 }
