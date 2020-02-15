@@ -83,7 +83,7 @@ class ImageInfo
 
   def self.prepare(config)
 		pp! config
-    if path = sh("nix-build", "--no-out-link", "./image.nix", "-A", "ami")
+    if path = sh("nix-build", "--no-out-link", "./.", "-A", "amis.jormungandr")
       ImageInfo.from_nix_path(path)
     else
       raise "Couldn't build image"

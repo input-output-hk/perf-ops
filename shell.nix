@@ -1,5 +1,8 @@
 with { pkgs = import ./nix { }; };
-pkgs.mkShell {
+let
+  terraform =
+    pkgs.terraform.withPlugins (plugins: with plugins; [ aws null nixos ]);
+in pkgs.mkShell {
   buildInputs = with pkgs; [
     cacert
     crystal

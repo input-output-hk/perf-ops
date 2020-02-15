@@ -1,16 +1,21 @@
-{ sources }:
+{ lib, sources }:
 let
-  inherit (builtins) typeOf trace attrNames toString toJSON;
+  inherit (builtins) typeOf trace attrNames toString toJSON mapAttrs any getEnv;
   eval-config = import (sources.nixpkgs + "/nixos/lib/eval-config.nix");
-in {
+in rec {
   pp = v: trace (toJSON v) v;
 
   requireEnv = name:
-    let value = __getEnv name;
+    let value = getEnv name;
     in if value == "" then
       abort "${name} environment variable is not set"
     else
       value;
+
+  toAmazonImage = v: v.config.system.build.amazonImage;
+  toAmazonImages = mapAttrs (k: v: toAmazonImage v);
+  filterImages = selected: images:
+    lib.filterAttrs (k: v: any (vv: k == vv) selected) images;
 
   mkImage = name:
     { container-modules ? [ ], host-modules ? [ ] }:

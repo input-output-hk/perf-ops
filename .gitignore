@@ -4,4 +4,5 @@ tf_key*
 *.tf.json
 .terraform/
 .envrc
-globals.nix
+state.json
+result*
