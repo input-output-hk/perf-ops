@@ -1,6 +1,8 @@
-{
-  name = "allow-egress";
-  description = "Allow default egress";
+{ region, provider }: {
+  name = "allow-egress-${region}";
+  description = "Allow default egress in ${region}";
+  provisioner."local-exec".command = "sleep 1";
+  inherit provider;
   egress = [{
     description = "allow-egress";
     from_port = 0;
@@ -11,6 +13,6 @@
     ipv6_cidr_blocks = "null";
     prefix_list_ids = "null";
     security_groups = "null";
-    self = "null"; 
+    self = "null";
   }];
 }

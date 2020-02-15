@@ -1,6 +1,8 @@
-{
-  name = "allow-ssh";
-  description = "Allow ssh";
+{ region, provider }: {
+  name = "allow-ssh-${region}";
+  description = "Allow ssh in ${region}";
+  provisioner."local-exec".command = "sleep 1";
+  inherit provider;
   ingress = [{
     description = "allow-ingress-ssh";
     from_port = 22;
