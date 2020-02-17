@@ -1,6 +1,9 @@
 { pkgs ?  import ./nix {}
 , makeWrapper ? pkgs.makeWrapper
 , awscli ? pkgs.awscli
+, gnutar ? pkgs.gnutar
+, gzip ? pkgs.gzip
+, qemu ? pkgs.qemu
 , nix ? pkgs.nix
 }: pkgs.crystal.buildCrystalPackage {
   name = "ami-sync";
@@ -12,6 +15,6 @@
 
   postInstall = ''
     wrapProgram $out/bin/ami-sync \
-      --set PATH ${pkgs.lib.makeBinPath [ awscli nix ]}
+      --set PATH ${pkgs.lib.makeBinPath [ awscli gnutar gzip qemu nix ]}
   '';
 }

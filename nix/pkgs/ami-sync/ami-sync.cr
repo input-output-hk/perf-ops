@@ -4,26 +4,27 @@
 require "json"
 require "option_parser"
 
-class ImageInfo
-  module Shell
-    def sh!(cmd, *args)
-      puts "$ #{cmd} #{args.to_a.join(" ")}"
-      output = IO::Memory.new
-      Process.run(cmd, args, output: output, error: STDERR).tap do |status|
-        raise "#{cmd} #{args} failed" unless status.success?
-      end
-      output.to_s.strip
+module Shell
+  def sh!(cmd, *args)
+    puts "$ #{cmd} #{args.to_a.join(" ")}"
+    output = IO::Memory.new
+    Process.run(cmd, args, output: output, error: STDERR).tap do |status|
+      raise "#{cmd} #{args} failed" unless status.success?
     end
-
-    def sh(cmd, *args)
-      puts "$ #{cmd} #{args.to_a.join(" ")}"
-      output = IO::Memory.new
-      status = Process.run(cmd, args, output: output, error: STDERR)
-      output.to_s.strip if status.success?
-    end
+    output.to_s.strip
   end
 
-  extend Shell
+  def sh(cmd, *args)
+    puts "$ #{cmd} #{args.to_a.join(" ")}"
+    output = IO::Memory.new
+    status = Process.run(cmd, args, output: output, error: STDERR)
+    output.to_s.strip if status.success?
+  end
+end
+extend Shell
+
+class ImageInfo
+
   include Shell
 
   # TODO: use http://169.254.169.254/latest/dynamic/instance-identity/document to get HOME_REGION
@@ -66,7 +67,7 @@ class ImageInfo
   end
 
   def name
-	  file.split("/")[3]
+    file.split("/")[3]
   end
 
   def description
@@ -81,9 +82,9 @@ class ImageInfo
     from_json(File.read(File.join(path, "/nix-support/image-info.json")))
   end
 
-  def self.prepare(config)
-		pp! config
-    if path = sh("nix-build", "--no-out-link", "./.", "-A", "amis.jormungandr")
+  def self.prepare(ami)
+    pp! ami
+    if path = sh("nix-build", "--no-out-link", "./.", "-A", "amis.#{ami}")
       ImageInfo.from_nix_path(path)
     else
       raise "Couldn't build image"
@@ -385,18 +386,36 @@ end
 config = Hash(String, String).new
 
 OptionParser.parse ARGV do |o|
-	o.on("--name=NAME", "name of the nix attribute in images.nix"){|v| config["name"] = v }
+  o.on("--name NAME",
+    "name(s) of the nix ami attr(s) in default.nix as a string, space delimited for multiple; " \
+    "defaults to .envrc $AMI_FILTER behavior if not declared") \
+    {|v| config["name"] = v }
 end
 
-image = ImageInfo.prepare(config)
+if config.empty?
+  puts "Using $AMI_FILTER env default for AMI attrs"
+  nixJson = sh("nix-instantiate", "--json", "--strict", "--eval", "-E", "__attrNames (import ./.).amis")
+  amis = Array(String).from_json(nixJson.to_s)
+else
+  puts "Using name arg from CLI for AMI attrs"
+  amis = config["name"].split
+end
 
-puts <<-INFO
-Image Details:
-  Name: #{image.name}
-  Description: #{image.description}
-  Size: #{image.logical_gigabytes}GB
-  System: #{image.system}
-  Amazon Arch: #{image.amazon_arch}
-INFO
+puts "To process: #{pp amis}"
+puts
+amis.each do |ami|
+  image = ImageInfo.prepare(ami)
 
-image.upload_all!
+  puts <<-INFO
+
+  Image Details:
+    Name: #{image.name}
+    Description: #{image.description}
+    Size: #{image.logical_gigabytes}GB
+    System: #{image.system}
+    Amazon Arch: #{image.amazon_arch}
+  INFO
+
+  image.upload_all!
+  puts
+end

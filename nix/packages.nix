@@ -1,6 +1,7 @@
 { lib, sources }:
 let
   inherit (builtins) typeOf trace attrNames toString toJSON mapAttrs any getEnv;
+  inherit (lib) splitString;
   eval-config = import (sources.nixpkgs + "/nixos/lib/eval-config.nix");
 in rec {
   pp = v: trace (toJSON v) v;
@@ -15,7 +16,12 @@ in rec {
   toAmazonImage = v: v.config.system.build.amazonImage;
   toAmazonImages = mapAttrs (k: v: toAmazonImage v);
   filterImages = selected: images:
-    lib.filterAttrs (k: v: any (vv: k == vv) selected) images;
+    lib.filterAttrs (imageName: v: filterFn selected imageName) images;
+  amiFilter = requireEnv "AMI_FILTER";
+  filterFn = selected: imageName:
+    if amiFilter == "all" then true
+    else any (filterNames: imageName == filterNames) (splitString " " selected);
+
 
   mkImage = name:
     { container-modules ? [ ], host-modules ? [ ] }:
