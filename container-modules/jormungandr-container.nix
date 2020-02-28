@@ -3,7 +3,7 @@ let
   sources = import ../nix/sources.nix;
 	default = import ../nix {};
   trustedPeers = __fromJSON (__readFile ./trusted_peers.json);
-  jormungandrPkgs = default.jormungandrLib.environments.itn_rewards_v1.packages;
+  jormungandrPkgs = default.jormungandrLib.environments.qa.packages;
 in {
   imports = [ (sources.jormungandr-nix + "/nixos") ];
   disabledModules = [ "services/networking/jormungandr.nix" ];
@@ -29,6 +29,7 @@ in {
 
   services.jormungandr = {
     enable = true;
+    environment = "qa";
     withBackTraces = true;
     package = jormungandrPkgs.jormungandr;
     jcliPackage = jormungandrPkgs.jcli;
@@ -39,6 +40,5 @@ in {
       output = "journald";
     };
     inherit trustedPeers;
-    maxConnections = 100;
   };
 }

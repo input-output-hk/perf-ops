@@ -18,10 +18,16 @@ let
     value = {
       ami = images."${amiName}-${region}".ami_id;
       provider = regionToProvider region;
+
       # spot_price = "0.00"; # Default is on-demand price
-      instance_type = "t3a.small";
+      instance_type = "r5.8xlarge";
+
+      # Use 1 TiB for short term load tests; this will cost 1000*0.1*12/365 = ~$3.29/day/node
+      # and will supply 3000 IOPS sustained; otherwise EBS burst cache risks expiring.
+      # For high disk IO tests, io1 could be used for higher sustained IOPS or NVMe/SSD vols
+      root_block_device.volume_size = 1000;
+
       security_groups = map (sg: sg + "-${region}") securityGroups;
-      root_block_device.volume_size = 4;
       tags = { Name = name; };
       wait_for_fulfillment = true;
       provisioner."local-exec" = {
@@ -40,7 +46,12 @@ let
 
   regions = {
     "eu-west-1" = 1;
-    "eu-central-1" = 1;
+    #"eu-west-1" = 8;
+    #"eu-central-1" = 8;
+    #"us-east-1" = 8;
+    #"us-west-1" = 8;
+    #"ap-southeast-1" = 8;
+    # "ap-northeast-1" = 1;  # Capacity not available
   };
 
   securityGroups = [ "allow-ssh" "allow-egress" ];

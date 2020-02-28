@@ -24,7 +24,7 @@ in rec {
 
 
   mkImage = name:
-    { container-modules ? [ ], host-modules ? [ ] }:
+    { host-modules ? [ ], container-modules ? [ ], extra-containers ? [ ] }:
     eval-config {
       system = "x86_64-linux";
       modules = [
@@ -34,6 +34,7 @@ in rec {
             ++ host-modules;
           amazonImage.name = name;
           services.performance-containers.moduleList = container-modules;
+          services.performance-containers.extraContainers = extra-containers;
         }
       ];
     };
