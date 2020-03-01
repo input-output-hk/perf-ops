@@ -84,7 +84,7 @@ in rec {
           inherit pkgs;
           config = (internalMkImage "qemuFull").config;
           lib = pkgs.lib;
-          diskSize = 16000;
+          diskSize = 32000;
           format = "qcow2-compressed";
         };
       in pkgs.writeShellScript "qemu-full" ''

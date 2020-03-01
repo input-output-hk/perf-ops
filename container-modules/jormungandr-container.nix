@@ -1,7 +1,7 @@
 { pkgs, config, lib, ... }:
-let 
+let
   sources = import ../nix/sources.nix;
-	default = import ../nix {};
+  default = import ../nix {};
   trustedPeers = __fromJSON (__readFile ./trusted_peers.json);
   jormungandrPkgs = default.jormungandrLib.environments.qa.packages;
 in {

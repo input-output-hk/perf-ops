@@ -8,8 +8,8 @@ in rec {
         # ./container-modules/jormungandr-performance.nix
       ];
       container-modules = [
-        # ./container-modules/container-common.nix
-        # ./container-modules/jormungandr-container.nix
+        ./container-modules/container-common.nix
+        ./container-modules/jormungandr-container.nix
       ];
       extra-containers = [
         {
@@ -18,7 +18,7 @@ in rec {
           containerNamePrefix = "a";
           hostAddress = "10.254.0.1";
           network = "10.254.1";
-          containerCount = 125;
+          containerCount = 1;
           containerNameStartNum = 1;
           ipStartAddr = 1;
           callPackageSetupName = "jormungandr.nix";
@@ -29,7 +29,7 @@ in rec {
           containerNamePrefix = "a";
           hostAddress = "10.254.0.1";
           network = "10.254.1";
-          containerCount = 125;
+          containerCount = 1;
           containerNameStartNum = 126;
           ipStartAddr = 126;
           callPackageSetupName = "jormungandr.nix";
@@ -37,7 +37,37 @@ in rec {
       ];
     };
     cardano-node = mkImage "cardano-node-v1" {
-      container-modules = [ ./container-modules/jormungandr-container.nix ];
+      host-modules = [
+        # ./container-modules/cardano-node-performance.nix
+      ];
+      container-modules = [
+        ./container-modules/container-common.nix
+        ./container-modules/cardano-node.nix
+      ];
+      extra-containers = [
+        {
+          name = "cardano-node-set-1";
+          entryFile = "./container-modules/cardano-node.nix";
+          containerNamePrefix = "a";
+          hostAddress = "10.254.0.1";
+          network = "10.254.1";
+          containerCount = 1;
+          containerNameStartNum = 1;
+          ipStartAddr = 1;
+          callPackageSetupName = "cardano-node.nix";
+        }
+        {
+          name = "cardano-node-set-2";
+          entryFile = "./container-modules/cardano-node.nix";
+          containerNamePrefix = "a";
+          hostAddress = "10.254.0.1";
+          network = "10.254.1";
+          containerCount = 1;
+          containerNameStartNum = 126;
+          ipStartAddr = 126;
+          callPackageSetupName = "cardano-node.nix";
+        }
+      ];
     };
   };
 

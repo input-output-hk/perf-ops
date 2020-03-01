@@ -1,0 +1,86 @@
+{
+    "extra-container": {
+        "branch": "master",
+        "description": "Run declarative NixOS containers without full system rebuilds",
+        "homepage": null,
+        "owner": "erikarvstedt",
+        "repo": "extra-container",
+        "rev": "6cced2c26212cc1c8cc7cac3547660642eb87e71",
+        "sha256": "0qr41mma2iwxckdhqfabw3vjcbp2ffvshnc3k11kwriwj14b766v",
+        "type": "tarball",
+        "url": "https://github.com/erikarvstedt/extra-container/archive/6cced2c26212cc1c8cc7cac3547660642eb87e71.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "cardano-node": {
+        "branch": "tags/1.6.0",
+        "description": null,
+        "homepage": null,
+        "owner": "input-output-hk",
+        "repo": "cardano-node",
+        "rev": "a01b3594b6d7b478b235ca9d305a516c7cb28972",
+        "sha256": "0wxzflz0fz6gzj5y1571r4x7ks2z59mpf53k1wr56fv48qbfrkhw",
+        "type": "tarball",
+        "url": "https://github.com/input-output-hk/cardano-node/archive/a01b3594b6d7b478b235ca9d305a516c7cb28972.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "iohk-nix": {
+        "branch": "master",
+        "description": "nix scripts shared across projects",
+        "homepage": null,
+        "owner": "input-output-hk",
+        "repo": "iohk-nix",
+        "rev": "61040cdb5127c72c8563ce743b2f13189d2f09f7",
+        "sha256": "01rbp5nlqxw26mx3f36vm2sc1cg15anga7hmfj7yd6fnrlhcgqfy",
+        "type": "tarball",
+        "url": "https://github.com/input-output-hk/iohk-nix/archive/61040cdb5127c72c8563ce743b2f13189d2f09f7.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "niv": {
+        "branch": "master",
+        "description": "Easy dependency management for Nix projects",
+        "homepage": "https://github.com/nmattia/niv",
+        "owner": "nmattia",
+        "repo": "niv",
+        "rev": "1dd094156b249586b66c16200ecfd365c7428dc0",
+        "sha256": "1b2vjnn8iac5iiqszjc2v1s1ygh0yri998c0k3s4x4kn0dsqik21",
+        "type": "tarball",
+        "url": "https://github.com/nmattia/niv/archive/1dd094156b249586b66c16200ecfd365c7428dc0.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixpkgs": {
+        "branch": "nixos-19.09",
+        "description": "Nix Packages collection",
+        "homepage": null,
+        "owner": "NixOS",
+        "repo": "nixpkgs-channels",
+        "rev": "c49da6435f314e04fc58ca29807221817ac2ac6b",
+        "sha256": "17zsqhaf098bvcfarnq0h9601z6smkfd1kz1px6xfg6xqfmr80r7",
+        "type": "tarball",
+        "url": "https://github.com/NixOS/nixpkgs-channels/archive/c49da6435f314e04fc58ca29807221817ac2ac6b.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixpkgs-unstable": {
+        "branch": "nixpkgs-unstable",
+        "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
+        "homepage": "https://github.com/NixOS/nixpkgs",
+        "owner": "NixOS",
+        "repo": "nixpkgs-channels",
+        "rev": "57ed5db343f7883c90c8a5a6b771216690842723",
+        "sha256": "09hxg4s6ppx4jwh4l4prhicpglfbcw7x9yy50pi0d948saxdk52m",
+        "type": "tarball",
+        "url": "https://github.com/NixOS/nixpkgs-channels/archive/57ed5db343f7883c90c8a5a6b771216690842723.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "ops-lib": {
+        "branch": "master",
+        "description": "NixOps deployment configuration library for IOHK devops ",
+        "homepage": null,
+        "owner": "input-output-hk",
+        "repo": "ops-lib",
+        "rev": "e436e272a30a41a85293c24475d3d81c3a260ccb",
+        "sha256": "1hlpbg55mzlq53bkjlrdk43a1ci3z9akmza7r6qc1mgg0bp6xsjh",
+        "type": "tarball",
+        "url": "https://github.com/input-output-hk/ops-lib/archive/e436e272a30a41a85293c24475d3d81c3a260ccb.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    }
+}
