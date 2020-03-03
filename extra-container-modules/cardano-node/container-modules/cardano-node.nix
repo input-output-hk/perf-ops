@@ -8,6 +8,7 @@
     config = { pkgs, config, lib, ... }: let
       sources = import ../nix/sources.nix;
       iohkNix = import sources.iohk-nix {};
+      cfg = config.services.cardano-node;
       selectedEnv = "shelley_staging";
     in
     {
@@ -17,7 +18,7 @@
       ];
 
       networking.firewall = {
-        allowedTCPPorts = [ 3001 ];
+        allowedTCPPorts = [ cfg.port ];
       };
 
       services.cardano-node = {
@@ -26,6 +27,11 @@
         environment = selectedEnv;
         nodeConfig = iohkNix.cardanoLib.environments."${selectedEnv}".nodeConfig // {
           hasPrometheus = [ "0.0.0.0" 12798 ];
+        };
+        topology = iohkNix.cardanoLib.mkEdgeTopology {
+          inherit (cfg) port;
+          edgeHost = iohkNix.cardanoLib.environments."${selectedEnv}".relaysNew;
+          edgeNodes = [];
         };
       };
 

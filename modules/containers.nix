@@ -93,7 +93,7 @@ in with lib; {
             SRCDIR="${containerPackage}"
             # Sleep delay for qemu startup
             sleep 10
-            for i in {${fixNum arg.containerNameStartNum}..${fixNum (arg.containerNameStartNum + arg.containerCount)}}; do
+            for i in {${fixNum arg.containerNameStartNum}..${fixNum (arg.containerNameStartNum + arg.containerCount - 1)}}; do
               "${containerPackage}"/create-extra-container.sh \
                 "$ENTRYFILE" "''${NAME}''${i}" "$HOST_ADDRESS" "$NETWORK" "$IPADDR" "$SRCDIR"
               IPADDR=$(( IPADDR + 1 ))

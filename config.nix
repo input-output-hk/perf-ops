@@ -20,7 +20,15 @@ let
       provider = regionToProvider region;
 
       # spot_price = "0.00"; # Default is on-demand price
-      instance_type = "r5.8xlarge";
+
+      # For cardano-node v1.6.0 on staging-shelley with recent state, at ~100 MB RAM per
+      # node initially, 256 MB/node should give sufficient memory for short load runtimes
+      # so min 64 GB RAM -- r5.4xlarge should also be plenty sufficient here (128 GB RAM)
+      instance_type = "r5.4xlarge";
+
+      # For 256 jormungandr containers @ v0.8.12 on QA with recent state,
+      # r5.8xlarge provides sufficient memory for 256 containers (dbus limited)
+      # instance_type = "r5.8xlarge";
 
       # Use 1 TiB for short term load tests; this will cost 1000*0.1*12/365 = ~$3.29/day/node
       # and will supply 3000 IOPS sustained; otherwise EBS burst cache risks expiring.

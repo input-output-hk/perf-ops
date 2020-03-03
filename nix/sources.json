@@ -1,4 +1,16 @@
 {
+    "cardano-node": {
+        "branch": "master",
+        "description": null,
+        "homepage": null,
+        "owner": "input-output-hk",
+        "repo": "cardano-node",
+        "rev": "c34fb9f7c27bf856f393a370e02526b2e092bcb1",
+        "sha256": "03r32ic5ikgxx4wqps6c1fz3ysgp3vv0srdna2nnlkrsv1v7y8cd",
+        "type": "tarball",
+        "url": "https://github.com/input-output-hk/cardano-node/archive/c34fb9f7c27bf856f393a370e02526b2e092bcb1.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "extra-container": {
         "branch": "master",
         "description": "Run declarative NixOS containers without full system rebuilds",
