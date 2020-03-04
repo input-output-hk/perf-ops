@@ -5,10 +5,10 @@
         "homepage": null,
         "owner": "input-output-hk",
         "repo": "cardano-node",
-        "rev": "c34fb9f7c27bf856f393a370e02526b2e092bcb1",
-        "sha256": "03r32ic5ikgxx4wqps6c1fz3ysgp3vv0srdna2nnlkrsv1v7y8cd",
+        "rev": "33282c9d168b42bde2cf3838e041c98245d331d8",
+        "sha256": "01l3bnzg653winsfb6hy9r8v4ja4f3x43r2iv6qzps7kwsra8mr5",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/cardano-node/archive/c34fb9f7c27bf856f393a370e02526b2e092bcb1.tar.gz",
+        "url": "https://github.com/input-output-hk/cardano-node/archive/33282c9d168b42bde2cf3838e041c98245d331d8.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "extra-container": {
@@ -24,15 +24,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "iohk-nix": {
-        "branch": "jormungandr-0.8.13",
+        "branch": "master",
         "description": "nix scripts shared across projects",
         "homepage": null,
         "owner": "input-output-hk",
         "repo": "iohk-nix",
-        "rev": "bb23c257a696f92e578c2cc45c3f8da13d1e0726",
+        "rev": "61040cdb5127c72c8563ce743b2f13189d2f09f7",
         "sha256": "01rbp5nlqxw26mx3f36vm2sc1cg15anga7hmfj7yd6fnrlhcgqfy",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/iohk-nix/archive/bb23c257a696f92e578c2cc45c3f8da13d1e0726.tar.gz",
+        "url": "https://github.com/input-output-hk/iohk-nix/archive/61040cdb5127c72c8563ce743b2f13189d2f09f7.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "iohk-ops": {

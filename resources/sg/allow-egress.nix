@@ -1,7 +1,7 @@
 { region, provider }: {
   name = "allow-egress-${region}";
   description = "Allow default egress in ${region}";
-  provisioner."local-exec".command = "sleep 1";
+  provisioner."local-exec".command = "sleep 5";
   inherit provider;
   egress = [{
     description = "allow-egress";
