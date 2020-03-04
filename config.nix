@@ -1,11 +1,13 @@
 { lib, pkgs, ... }:
 let
+  packages = (import ./nix { }).packages;
+  inherit (packages) pp requireEnv;
+  inherit (lib) elemAt mapAttrs' mapAttrsToList splitString recursiveUpdate;
   inherit (builtins) fromJSON readFile mapAttrs unsafeDiscardStringContext replaceStrings
                      concatLists attrNames attrValues foldl' genList listToAttrs;
-  inherit (lib) elemAt mapAttrs' mapAttrsToList splitString recursiveUpdate;
 
-  packages = (import ./nix { }).packages;
-  pp = packages.pp;
+  uuid = requireEnv "PERF_UUID";
+
   images = (fromJSON (readFile ./state.json)).images;
   amis = (import ./.).amis;
   amiNames = mapAttrs (name: ami:
@@ -33,7 +35,7 @@ let
                     , ... }@config:
     name: securityGroups: region: count:
   let
-    spotName = "${name}-${toString count}-${region}";
+    spotName = "${name}-${toString count}-${region}-${uuid}";
     amiName = amiNames.${name};
   in {
     name = spotName;
@@ -42,10 +44,10 @@ let
               spot_price wait_for_fulfillment;
 
       ami = images."${amiName}-${region}".ami_id;
-      security_groups = map (sg: sg + "-${region}") securityGroups;
+      security_groups = map (sg: sg + "-${region}-${uuid}") securityGroups;
       provider = regionToProvider region;
       provisioner."local-exec" = provSpotCmd region spotName;
-      tags = if (tags != null) then tags else { Name = name; };
+      tags = if (tags != null) then tags else { Name = "${name}-${uuid}"; };
     };
   };
 
@@ -115,9 +117,9 @@ let
   # map the regions over the sg
   mkRegionSecGroups = sg: regions: map (region:
     {
-      name = "${sg}-${region}";
+      name = "${sg}-${region}-${uuid}";
       value = (import (./. + "/resources/sg/${sg}.nix"))
-        { inherit region; provider = regionToProvider region; };
+        { inherit region uuid; provider = regionToProvider region; };
     }
   ) (attrNames regions);
 

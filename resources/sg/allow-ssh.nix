@@ -1,6 +1,6 @@
-{ region, provider }: {
-  name = "allow-ssh-${region}";
-  description = "Allow ssh in ${region}";
+{ region, uuid, provider }: {
+  name = "allow-ssh-${region}-${uuid}";
+  description = "Allow ssh in ${region} for perf-ops uuid ${uuid}";
   provisioner."local-exec".command = "sleep 5";
   inherit provider;
   ingress = [{
