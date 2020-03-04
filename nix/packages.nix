@@ -36,7 +36,33 @@ in rec {
               ++ host-modules ++ optionals (vmType == "ami") [
                 (sources.nixpkgs
                   + "/nixos/maintainers/scripts/ec2/amazon-image.nix")
-                { amazonImage.name = name; }
+                {
+                  amazonImage.name = name;
+                  systemd.services."apply-ec2-data".path = with pkgs; [
+                    # If a bash ec2 user-data script is executing, add
+                    # required command packages to the path here
+                    coreutils
+                    e2fsprogs
+                    gnugrep
+                    gnused
+                    gnutar
+                    kmod
+                    mdadm
+                    utillinux
+                  ];
+                  systemd.services."apply-ec2-data".preStart = ''
+                    userData="/etc/ec2-metadata/user-data"
+                    [ -s "$userData" ] || { echo "ec2 user-data not found..."; exit 0; }
+                    if head -n 1 "$userData" | grep -q bash; then
+                      echo "Running bash script in ec2 user-data..."
+                      cp "$userData" /root
+                      chmod u+x "/root/user-data"
+                      "/root/user-data"
+                    else
+                      echo "ec2 user-data does not appear to be bash..."
+                    fi
+                  '';
+                }
               ] ++ optional (vmType == "vm") ({
                 virtualisation = {
                   graphics = false;

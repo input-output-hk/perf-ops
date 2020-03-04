@@ -1,0 +1,28 @@
+use nix
+watch_file nix/pkgs/ami-sync/ami-sync.cr
+
+function uuid-gen {
+  if [ -f "perf-uuid.txt" ]; then
+    cat "perf-uuid.txt"
+  else
+    head /dev/urandom | tr -dc A-Za-z0-9 | head -c 10 | tee "perf-uuid.txt"
+  fi
+}
+
+export AWS_ACCESS_KEY_ID="$SECRET"
+export AWS_SECRET_ACCESS_KEY="$SECRET"
+
+# A unique perf-ops deployment identifier is required so security groups
+# are not collisional between deployments.  It also makes tracking down
+# resources easier.
+export PERF_UUID="$(uuid-gen)"
+
+# Include a space separated string of default.nix attribute ami names here
+# Any attr names not included here will not be built by `ami-sync`
+# To build all names, set $AMI_FILTER to "all".  Examples follow:
+#export AMI_FILTER="all"
+export AMI_FILTER="cardano-node"
+#export AMI_FILTER="jormungandr-presync jormungandr-nosync"
+
+# Set the NIX_PATH
+export NIX_PATH="nixpkgs=$(nix eval '(import ./nix {}).path')"
