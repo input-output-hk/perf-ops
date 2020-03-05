@@ -4,6 +4,16 @@
 require "json"
 require "option_parser"
 
+HOME_REGION = "eu-west-1"
+ALL_REGIONS = %w[
+   eu-west-1 eu-west-2 eu-west-3 eu-central-1
+   us-east-1 us-east-2 us-west-1 us-west-2
+   ca-central-1
+   ap-southeast-1 ap-southeast-2 ap-northeast-1 ap-northeast-2
+   ap-south-1
+   sa-east-1
+]
+
 module Shell
   def sh!(cmd, *args)
     puts "$ #{cmd} #{args.to_a.join(" ")}"
@@ -30,16 +40,6 @@ class ImageInfo
   # TODO: use http://169.254.169.254/latest/dynamic/instance-identity/document to get HOME_REGION
 
   BUCKET      = "iohk-amis"
-  HOME_REGION = "eu-west-1"
-  REGIONS     = %w[eu-west-1 eu-central-1 us-east-1 us-west-1 ap-southeast-1 ap-northeast-1]
-  # REGIONS     = %w[
-  #   eu-west-1 eu-west-2 eu-west-3 eu-central-1
-  #   us-east-1 us-east-2 us-west-1 us-west-2
-  #   ca-central-1
-  #   ap-southeast-1 ap-southeast-2 ap-northeast-1 ap-northeast-2
-  #   ap-south-1
-  #   sa-east-1
-  # ]
 
   JSON.mapping(
     label: String,
@@ -91,11 +91,10 @@ class ImageInfo
     end
   end
 
-  def upload_all!
-    home_image_id = upload_image HOME_REGION
-
-    (REGIONS - [HOME_REGION]).each do |region|
-      copied_image_id = copy_to_region region, HOME_REGION, home_image_id.not_nil!
+  def upload_all!(homeRegion, regions)
+    home_image_id = upload_image homeRegion
+    (regions - [ homeRegion ]).each do |region|
+      copied_image_id = copy_to_region region, homeRegion, home_image_id.not_nil!
     end
   end
 
@@ -386,23 +385,67 @@ end
 config = Hash(String, String).new
 
 OptionParser.parse ARGV do |o|
-  o.on("--name NAME",
-    "name(s) of the nix ami attr(s) in default.nix as a string, space delimited for multiple; " \
+  o.banner = "Usage: ami-sync [arguments]"
+  o.on("-n AMI_NAME(S)", "--names AMI_NAME(S)",
+    "Ami name(s) of the nix ami attr(s) in default.nix as a string, space delimited for multiple; " \
     "defaults to .envrc $AMI_FILTER behavior if not declared") \
-    {|v| config["name"] = v }
+    { |names| config["names"] = names }
+  o.on("-r REGION(S)", "--regions REGION(S)",
+    "Region(s) for generated AMIs to be pushed to as a string, space delimited for multiple; " \
+    "defaults to deploy-config.nix region definitions if not declared") \
+    { |regions| config["regions"] = regions }
+  o.on("-s HOME", "--home HOME",
+    "The home (source) region to push AMI images to and then copy from into other target regions; " \
+    "defaults to \"#{HOME_REGION}\" if not declared") \
+    { |homeRegion| config["homeRegion"] = homeRegion }
+  o.on("-h", "--help", "Show this help") { puts o; exit(0) }
 end
 
-if config.empty?
-  puts "Using $AMI_FILTER env default for AMI attrs"
+# Parse the --names CLI option
+puts
+if !config.has_key? "names"
+  puts "Using $AMI_FILTER env default for AMI names to build"
   nixJson = sh("nix-instantiate", "--json", "--strict", "--eval", "-E", "__attrNames (import ./.).amis")
   amis = Array(String).from_json(nixJson.to_s)
 else
   puts "Using name arg from CLI for AMI attrs"
-  amis = config["name"].split
+  amis = config["names"].split
 end
+puts amis
 
-puts "To process: #{pp amis}"
+# Parse the --home CLI option
 puts
+if !config.has_key? "homeRegion"
+  puts "Using default home region of \"#{HOME_REGION}\""
+  homeRegion = HOME_REGION
+else
+  puts "Using \"home\" arg from CLI for home region"
+  homeRegion = config["homeRegion"]
+end
+puts homeRegion
+
+# Parse the --regions CLI option
+puts
+if !config.has_key? "regions"
+  puts "Using deploy-config.nix region definitions to push AMI targets"
+  nixJson = sh("nix-instantiate", "--json", "--strict", "--eval", "-E",
+    "let pkgs = import <nixpkgs> {}; lib = pkgs.lib; " \
+    "in (import ./config.nix { inherit lib pkgs ; }).variable.usedRegions.default")
+  regions = Hash(String, Array(String)).from_json(nixJson.to_s)
+else
+  puts "Using \"region\" arg from CLI for per-image AMI region targets"
+  regions = Hash(String, Array(String)).new
+  amis.each do |ami|
+    regions[ami] = config["regions"].split
+  end
+end
+puts regions
+
+puts
+puts "AMI images to build and push: #{amis}"
+puts
+
+puts "Building images..."
 amis.each do |ami|
   image = ImageInfo.prepare(ami)
 
@@ -416,6 +459,7 @@ amis.each do |ami|
     Amazon Arch: #{image.amazon_arch}
   INFO
 
-  image.upload_all!
+  image.upload_all!(homeRegion, regions[ami])
+
   puts
 end
