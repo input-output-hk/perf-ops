@@ -13,6 +13,31 @@ ALL_REGIONS = %w[
    ap-south-1
    sa-east-1
 ]
+BUCKET = "iohk-amis"
+BUCKET_REGION = "eu-west-1"
+
+module Common
+  def perf_uuid
+    file = "perf-uuid.txt"
+    if !ENV["PERF_UUIDF"]?.nil?
+      ENV["PERF_UUID"]
+    else
+      if File.exists?(file) && !File.empty?(file)
+        File.read(file).strip
+      else
+        "undefined"
+      end
+    end
+  end
+
+  def validate_regions(regions)
+    regions.each do |region|
+      raise "Error: #{region} is not a valid region" \
+        if !ALL_REGIONS.includes? region
+    end
+  end
+end
+include Common
 
 module Shell
   def shSilent!(cmd, *args)
@@ -43,9 +68,8 @@ extend Shell
 
 class ImageInfo
 
+  include Common
   include Shell
-
-  BUCKET      = "iohk-amis"
 
   JSON.mapping(
     label: String,
@@ -131,12 +155,12 @@ class ImageInfo
 
       puts "Waiting for import"
 
-      # TODO: Add a Key=perf-ops Value=$(cat perf-uuid.txt) tag here
       image.snapshot_id = wait_for_import(region, image.task_id.not_nil!)
       if ami_tag_output = sh!("aws", "ec2", "create-tags",
         "--region", region,
         "--resources", "#{image.snapshot_id}",
-        "--tags", "Key=Name,Value=\"#{name}\"")
+        "--tags", "Key=Name,Value=\"#{name}\"",
+                  "Key=perf-ops,Value=\"#{perf_uuid}\"")
         puts "Snapshot tag successfully created"
       else
         puts "Snapshot tagging failed."
@@ -149,7 +173,6 @@ class ImageInfo
     deregister_by_name(region, force)
   end
 
-  # TODO: handle already existing image and allow setting name based on image hash
   def upload_image_register(region, force)
     with_image region do |image|
       return image.ami_id if !force && image.ami_id
@@ -184,6 +207,20 @@ class ImageInfo
       result = RegisterImageResult.from_json(ami_id_output)
       image.ami_id = result.image_id
       puts "#{region} AMI ID: #{image.ami_id.to_s}"
+      puts
+
+      if ami_tag_output = sh!("aws", "ec2", "create-tags",
+        "--region", region,
+        "--resources", "#{image.ami_id}",
+        "--tags", "Key=Name,Value=\"#{name}\"",
+                  "Key=perf-ops,Value=\"#{perf_uuid}\"",
+                  "Key=source-region,Value=\"#{region}\"",
+                  "Key=snapshot-id,Value=\"#{image.snapshot_id}\"",
+                  "Key=ami,Value=\"#{image.ami_id}\"")
+        puts "Snapshot tag successfully created"
+      else
+        puts "Snapshot tagging failed."
+      end
       puts
       return image.ami_id
     end
@@ -249,10 +286,7 @@ class ImageInfo
         puts "Checking for an existing snapshot in the home region"
         existing_snapshot = sh! "aws", "ec2", "describe-snapshots",
           "--region", region, "--filters", "Name=tag:Name,Values=\"#{name}\""
-
-        # TODO: sort the filter result to use the most recent image if multiple are found
-        # TODO: add tag of Key=perf-ops Value=$(cat perf-uuid.txt) to each snapshot for easier cleanup
-        # TODO: add snapshot and ami cleanup functions, utilizing tags for discrimination
+        puts
 
         # Check for an existing snapshot with the image hash; use it if it exists
         snapshotMatch = SnapshotDescribe.from_json(existing_snapshot).matches
@@ -273,7 +307,6 @@ class ImageInfo
       end
 
       puts "Importing image from S3 path #{s3_url}"
-
       task_id_output = sh! "aws", "ec2", "import-snapshot",
         "--region", region,
         "--description", "#{name}",
@@ -286,7 +319,6 @@ class ImageInfo
         },
       }.to_json
       puts
-
       if task_id = task_id_output
         image.task_id = ImportResult.from_json(task_id).import_task_id
       end
@@ -297,18 +329,17 @@ class ImageInfo
     puts
     if !force
       puts "Checking for image on S3"
-      return if sh "aws", "s3", "ls", "--region", region, s3_url
+      return if sh "aws", "s3", "ls", "--region", BUCKET_REGION, s3_url
+      puts
       puts "Image missing from aws s3, uploading"
     else
       puts "Force pushing the image to aws s3, uploading"
     end
-    sh "aws", "s3", "cp", "--region", region, file, s3_url
+    sh "aws", "s3", "cp", "--region", BUCKET_REGION, file, s3_url
   end
 
   def copy_to_region(region, from_region, from_ami_id, force)
-    # pp! :copy_to_region, region, from_region, from_ami_id
     with_image region do |image|
-      # pp! image
       if image.ami_id && !force
         puts "Using an existing AMI for #{region} in the registry file: #{image.ami_id}"
         return image.ami_id
@@ -334,15 +365,74 @@ class ImageInfo
       else
         puts "Forcing an ami image copy to region #{region}"
       end
+
+      # Register a new ami in the copy-to region
       ami_id_output = sh! "aws", "ec2", "copy-image",
         "--region", region,
         "--source-region", from_region,
         "--source-image-id", from_ami_id,
         "--name", name,
         "--description", description
-
-      image.ami_id = RegisterImageResult.from_json(ami_id_output).image_id
       puts "Created AMI ID #{image.ami_id.to_s} in region #{region}"
+      image.ami_id = RegisterImageResult.from_json(ami_id_output).image_id
+      puts
+
+      # Find the new amis backing snapshot in the remote region
+      puts "Checking for the remote backing snapshot"
+      matches = 0
+      checks = 0
+      while matches == 0 && checks < 30
+        sleep(1)
+        existing_snapshot = shSilent!("aws", "ec2", "describe-snapshots",
+          "--region", region,
+          "--filters", "Name=description,Values=\"Copied for DestinationAmi " \
+                       "#{image.ami_id.to_s.strip} from SourceAmi #{from_ami_id.to_s.strip}*\"")
+        snapshotMatch = SnapshotDescribe.from_json(existing_snapshot).matches
+        checks += 1
+        matches = snapshotMatch.size
+      end
+      if matches == 0
+        puts "Unable to find and tag the remote backing snapshot"
+        remote_snapshot_id = "undefined"
+      elsif matches == 1
+        if extractNotNil = snapshotMatch
+          remote_snapshot_id = extractNotNil.first.snapshotId
+          puts "Remote snapshot id: #{remote_snapshot_id}"
+          puts
+        end
+
+        # Create tags on the new remote backing snapshot
+        if ami_tag_output = sh!("aws", "ec2", "create-tags",
+          "--region", region,
+          "--resources", "#{remote_snapshot_id}",
+          "--tags", "Key=Name,Value=\"#{name}\"",
+                    "Key=perf-ops,Value=\"#{perf_uuid}\"",
+                    "Key=source-region,Value=\"#{from_region}\"",
+                    "Key=ami,Value=\"#{image.ami_id}\"")
+          puts "Snapshot tagging successfully created for the remote backing snapshot"
+        else
+          puts "Snapshot tagging of the remote backing snapshot failed."
+        end
+      else
+        puts "An unexpected number of snapshot matches were found due to an unknown error"
+      end
+      puts
+
+      # Create tags on the new remote ami
+      if ami_tag_output = sh!("aws", "ec2", "create-tags",
+        "--region", region,
+        "--resources", "#{image.ami_id}",
+        "--tags", "Key=Name,Value=\"#{name}\"",
+                  "Key=perf-ops,Value=\"#{perf_uuid}\"",
+                  "Key=source-region,Value=\"#{from_region}\"",
+                  "Key=snapshot-id,Value=\"#{remote_snapshot_id}\"")
+        puts "Ami tag successfully created"
+      else
+        puts "Ami tagging of copied ami failed."
+      end
+      puts
+
+      image.ami_id
     end
   end
 
@@ -445,6 +535,24 @@ class Registry
 end
 
 class ImageDescription
+
+  class EbsDetails
+    JSON.mapping(
+      snapshot_id: {type: String?, key: "SnapshotId"},
+      delete_on_termination: {type: Bool?, key: "DeleteOnTermination"},
+      volume_type: {type: String?, key: "VolumeType"},
+      volume_size: {type: Int32?, key: "VolumeSize"},
+      encrypted: {type: Bool?, key: "Encrypted"}
+    )
+  end
+
+  class BlockDeviceMappings
+    JSON.mapping(
+        device_name: {type: String, key: "DeviceName"},
+        ebs: {type: EbsDetails?, key: "Ebs"}
+    )
+  end
+
   JSON.mapping(
     virtualization_type: {type: String, key: "VirtualizationType"},
     description: {type: String, key: "Description"},
@@ -456,16 +564,117 @@ class ImageDescription
     architecture: {type: String, key: "Architecture"},
     image_location: {type: String, key: "ImageLocation"},
     root_device_type: {type: String, key: "RootDeviceType"},
+    block_device_mappings: {type: Array(BlockDeviceMappings), key: "BlockDeviceMappings"},
     owner_id: {type: String, key: "OwnerId"},
     root_device_name: {type: String, key: "RootDeviceName"},
     creation_date: {type: String, key: "CreationDate"},
     public: {type: Bool, key: "Public"},
     image_type: {type: String, key: "ImageType"},
-    name: {type: String, key: "Name"},
+    name: {type: String, key: "Name"}
   )
 
+  def self.s3delete
+    puts "Deleting *.vhd image paths and files in the s3 bucket: " \
+         "--region #{BUCKET_REGION} s3://#{BUCKET}"
+    output = IO::Memory.new
+    Process.run("aws",
+      ["s3", "rm",
+       "--region", BUCKET_REGION,
+       "--recursive",
+       "s3://#{BUCKET}/nix/store"
+      ], output: output, error: STDERR
+    )
+  end
+
+  def self.delete(purge)
+    # Check all images for availablility prior to deleting
+    print "Checking images and snapshots are available prior to deletion " \
+          "to keep the operation as atomic as possible."
+    ALL_REGIONS.each do |region|
+      print "."
+      output = IO::Memory.new
+      if purge
+        Process.run("aws",
+          ["ec2", "describe-images",
+           "--region", region,
+           "--filters", "Name=tag-key,Values=\"perf-ops\"",
+          ], output: output, error: STDERR
+        )
+      else
+        Process.run("aws",
+          ["ec2", "describe-images",
+           "--region", region,
+           "--filters", "Name=tag:perf-ops,Values=\"#{perf_uuid}\"",
+          ], output: output, error: STDERR
+        )
+      end
+
+      images = Hash(String, Array(ImageDescription)).from_json(output.to_s)
+      images["Images"].each do |image|
+        if image.state != "available"
+          puts "\nImage #{image.image_id} is not yet available in region #{region}.  " \
+               "Try again in a few minutes."
+          exit(0)
+        end
+        if ebsDevice = image.block_device_mappings.first.ebs
+          snapshot_id = ebsDevice.snapshot_id
+          if snapshot_id.nil?
+            puts "\nImage #{image.image_id} does not have an ebs snapshot listed yet " \
+                 "in region #{region}.  Try again in a few minutes."
+            exit(0)
+          end
+        end
+      end
+    end
+    puts
+
+    ALL_REGIONS.each do |region|
+      output = IO::Memory.new
+      if purge
+        puts "Deleting all perf-ops deploy amis and snapshots from region #{region}"
+        Process.run("aws",
+          ["ec2", "describe-images",
+           "--region", region,
+           "--filters", "Name=tag-key,Values=\"perf-ops\"",
+          ], output: output, error: STDERR
+        )
+      else
+        puts "Deleting perf-ops deploy \"#{perf_uuid}\" amis and snapshots from region #{region}"
+        Process.run("aws",
+          ["ec2", "describe-images",
+           "--region", region,
+           "--filters", "Name=tag:perf-ops,Values=\"#{perf_uuid}\"",
+          ], output: output, error: STDERR
+        )
+      end
+
+      images = Hash(String, Array(ImageDescription)).from_json(output.to_s)
+
+      images["Images"].each do |image|
+        if image.state == "available" && (ebsDevice = image.block_device_mappings.first.ebs)
+          puts "  Deleting #{image.image_id} and backing snapshot #{ebsDevice.snapshot_id}"
+          Process.run("aws",
+            ["ec2", "deregister-image",
+             "--image-id", image.image_id,
+             "--region", region,
+            ], error: STDERR, output: STDOUT)
+          Process.run("aws",
+            ["ec2", "delete-snapshot",
+             "--region", region,
+             "--snapshot-id", "#{ebsDevice.snapshot_id}",
+            ], output: output, error: STDERR
+          )
+        else
+          puts "Cannot delete #{image.image_id} and related snapshot -- ami is not yet available"
+        end
+      end
+    end
+    puts "Deleting the registry file to rebuild clean state on the next sync operation"
+    File.delete("state.json") if File.exists?("state.json")
+  end
+
   def self.deregister_all
-    ImageInfo::REGIONS.each do |region|
+    ALL_REGIONS.each do |region|
       output = IO::Memory.new
       Process.run("aws",
         ["ec2", "describe-images",
@@ -491,9 +700,14 @@ end
 # Main
 config = Hash(String, String).new
 force = false
+delete = false
+purge = false
+s3purge = false
 
 OptionParser.parse ARGV do |o|
   o.banner = "Usage: ami-sync [arguments]"
+  o.separator("Deploy UUID: \"#{perf_uuid}\"" \
+    "#{if perf_uuid == "undefined" " [Define uuid in .envrc]" end}\n")
   o.on("-n AMI_NAME(S)", "--names AMI_NAME(S)",
     "Ami name(s) of the nix ami attr(s) in default.nix as a string, space delimited for multiple; " \
     "defaults to .envrc $AMI_FILTER behavior if not declared") \
@@ -509,6 +723,25 @@ OptionParser.parse ARGV do |o|
   o.on("-f", "--force", "Force push files, images, snapshots and ami registrations, " \
     "even if they already exist.") { force = true }
   o.on("-h", "--help", "Show this help") { puts o; exit(0) }
+  o.separator("\nThe following options are destructive and only one option can be called per command:\n")
+  o.on("-d", "--delete", "Delete AMIs and snapshots used by this perf-ops deploy " \
+    "(uuid \"#{perf_uuid}\") across all regions accessible with the current aws credentials") \
+    { delete = true; }
+  o.on("--purge", "Delete AMIs and snapshots used by ALL perf-ops deploys across all regions " \
+    "accessible with the current aws credentials") { delete = true; purge = true }
+  o.on("--s3purge", "Delete *.vhd image paths and files in the s3 bucket, " \
+    "accessible with the current aws credentials, used to generate snapshots and AMIs") \
+    { s3purge = true; }
+end
+
+if s3purge
+  ImageDescription.s3delete
+  exit(0)
+end
+
+if delete
+  ImageDescription.delete(purge)
+  exit(0)
 end
 
 # Parse the --names CLI option
@@ -562,6 +795,7 @@ puts
 
 puts "Building images..."
 amis.each do |ami|
+  validate_regions(regions[ami])
   image = ImageInfo.prepare(ami)
 
   puts <<-INFO
