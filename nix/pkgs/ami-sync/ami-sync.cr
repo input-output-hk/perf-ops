@@ -63,6 +63,12 @@ module Shell
     status = Process.run(cmd, args, output: output, error: STDERR)
     output.to_s.strip if status.success?
   end
+
+  def shSilent(cmd, *args)
+    output = IO::Memory.new
+    status = Process.run(cmd, args, output: output, error: STDERR)
+    output.to_s.strip if status.success?
+  end
 end
 extend Shell
 
@@ -173,9 +179,23 @@ class ImageInfo
     deregister_by_name(region, force)
   end
 
+  def validate_ami_by_id(ami_id, region)
+    output = shSilent "aws", "ec2", "describe-images",
+      "--region", region,
+      "--filters", "Name=image-id,Values=\"#{ami_id}\""
+    images = Hash(String, Array(ImageDescription)).from_json(output.to_s)
+    if images["Images"].size == 1
+      return true
+    else
+      return false
+    end
+  end
+
   def upload_image_register(region, force)
     with_image region do |image|
-      return image.ami_id if !force && image.ami_id
+      if !force && image.ami_id
+        return image.ami_id if validate_ami_by_id(image.ami_id, region)
+      end
       if force
         puts "Forcing a new ami registration"
       end
@@ -243,11 +263,14 @@ class ImageInfo
       end
     else
       images["Images"].each do |image|
-        puts "Updating the registry file with #{image.image_id} in #{region}"
         with_image region do |imageRegistry|
-          imageRegistry.ami_id = image.image_id
+          if imageRegistry.ami_id != image.image_id
+            puts "Updating the registry file with the hash matched image #{image.image_id} in #{region}"
+            imageRegistry.ami_id = image.image_id
+          else
+            puts "Using an existing AMI for #{region} in the registry file: #{image.image_id}"
+          end
         end
-        puts
       end
     end
   end
@@ -280,7 +303,7 @@ class ImageInfo
 
   def upload_image_import(region, force)
     with_image region do |image|
-      check_for_image(region, force)
+      check_for_s3image(region, force)
       puts
       if !force
         puts "Checking for an existing snapshot in the home region"
@@ -290,7 +313,7 @@ class ImageInfo
 
         # Check for an existing snapshot with the image hash; use it if it exists
         snapshotMatch = SnapshotDescribe.from_json(existing_snapshot).matches
-        if snapshotMatch.size >= 1 && snapshotMatch.first.state == "completed"
+        if snapshotMatch.size >= 1 && snapshotMatch.first.state != "failed"
           if snapshotMatch.size == 1
             puts "Found an existing snapshot with the expected hash in the home region.  " \
                  "Using the existing snapshot: #{snapshotMatch.first.snapshotId}"
@@ -325,7 +348,7 @@ class ImageInfo
     end
   end
 
-  def check_for_image(region, force)
+  def check_for_s3image(region, force)
     puts
     if !force
       puts "Checking for image on S3"
@@ -341,9 +364,12 @@ class ImageInfo
   def copy_to_region(region, from_region, from_ami_id, force)
     with_image region do |image|
       if image.ami_id && !force
-        puts "Using an existing AMI for #{region} in the registry file: #{image.ami_id}"
-        return image.ami_id
-      elsif !force
+        if validate_ami_by_id(image.ami_id, region)
+          puts "Using an existing AMI for #{region} in the registry file: #{image.ami_id}"
+          return image.ami_id
+        end
+      end
+      if !force
         output = sh "aws", "ec2", "describe-images",
           "--region", region,
           "--filters", "Name=name,Values=\"#{name}\""
@@ -351,7 +377,7 @@ class ImageInfo
         # Check for an existing ami image with the hash name; use it if it exists
         images = Hash(String, Array(ImageDescription)).from_json(output.to_s)
         imagesMatch = images["Images"]
-        if imagesMatch.size >= 1 && imagesMatch.first.state == "available"
+        if imagesMatch.size >= 1 && imagesMatch.first.state != "failed"
           if imagesMatch.size == 1
             puts "Found an existing ami image with the name hash in the region #{region}.  " \
                  "Using the existing ami image: #{imagesMatch.first.image_id}"
@@ -360,6 +386,7 @@ class ImageInfo
                  "Using the first ami image found: #{imagesMatch.first.image_id}"
           end
           image.ami_id = imagesMatch.first.image_id
+          puts
           return ami_id = image.ami_id
         end
       else
