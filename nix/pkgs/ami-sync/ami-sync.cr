@@ -699,31 +699,38 @@ end
 
 # Main
 config = Hash(String, String).new
+sync = false
 force = false
 delete = false
 purge = false
 s3purge = false
 
-OptionParser.parse ARGV do |o|
-  o.banner = "Usage: ami-sync [arguments]"
+argvBackup = ARGV
+
+progParse = OptionParser.parse ARGV do |o|
+  o.banner = "Usage: ami-sync <[-s|--sync [optional args]] | [cleanup args]>"
   o.separator("Deploy UUID: \"#{perf_uuid}\"" \
     "#{if perf_uuid == "undefined" " [Define uuid in .envrc]" end}\n")
+  o.on("-s", "--sync", "Builds and syncs AMI images") { sync = true }
+  o.on("-h", "--help", "Show this help") { puts o; exit(0) }
+  o.separator("\n---- Sync optional args ----\n")
   o.on("-n AMI_NAME(S)", "--names AMI_NAME(S)",
-    "Ami name(s) of the nix ami attr(s) in default.nix as a string, space delimited for multiple; " \
+    "AMI name(s) of the nix AMI attr(s) in default.nix as a string, space delimited for multiple; " \
     "defaults to .envrc $AMI_FILTER behavior if not declared") \
     { |names| config["names"] = names }
   o.on("-r REGION(S)", "--regions REGION(S)",
     "Region(s) for generated AMIs to be pushed to as a string, space delimited for multiple; " \
     "defaults to deploy-config.nix region definitions if not declared") \
     { |regions| config["regions"] = regions }
-  o.on("-s HOME", "--home HOME",
-    "The home (source) region to push AMI images to and then copy from into other target regions; " \
+  o.on("--home HOME",
+    "The home region to push AMI images to and then copy from into other target regions; " \
     "defaults to \"#{HOME_REGION}\" if not declared") \
     { |homeRegion| config["homeRegion"] = homeRegion }
-  o.on("-f", "--force", "Force push files, images, snapshots and ami registrations, " \
+  o.on("-f", "--force", "Force push files, images, snapshots and AMI registrations, " \
     "even if they already exist.") { force = true }
-  o.on("-h", "--help", "Show this help") { puts o; exit(0) }
-  o.separator("\nThe following options are destructive and only one option can be called per command:\n")
+  o.separator("\n---- Cleanup args ----\n")
+  o.separator("The following options are destructive and only one option can be called per CLI command.  " \
+     "A sync request also issued on the same cmd will be ignored.\n")
   o.on("-d", "--delete", "Delete AMIs and snapshots used by this perf-ops deploy " \
     "(uuid \"#{perf_uuid}\") across all regions accessible with the current aws credentials") \
     { delete = true; }
@@ -732,6 +739,11 @@ OptionParser.parse ARGV do |o|
   o.on("--s3purge", "Delete *.vhd image paths and files in the s3 bucket, " \
     "accessible with the current aws credentials, used to generate snapshots and AMIs") \
     { s3purge = true; }
+end
+
+if !sync && !delete && !s3purge
+  puts progParse.to_s
+  exit(0)
 end
 
 if s3purge
