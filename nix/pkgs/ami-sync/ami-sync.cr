@@ -728,7 +728,7 @@ progParse = OptionParser.parse ARGV do |o|
     { |homeRegion| config["homeRegion"] = homeRegion }
   o.on("-f", "--force", "Force push files, images, snapshots and AMI registrations, " \
     "even if they already exist.") { force = true }
-  o.separator("\n---- Cleanup args ----\n")
+  o.separator("\n------- Cleanup args -------\n")
   o.separator("The following options are destructive and only one option can be called per CLI command.  " \
      "A sync request also issued on the same cmd will be ignored.\n")
   o.on("-d", "--delete", "Delete AMIs and snapshots used by this perf-ops deploy " \

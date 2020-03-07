@@ -17,12 +17,13 @@ export AWS_SECRET_ACCESS_KEY="$SECRET"
 # resources easier.
 export PERF_UUID="$(uuid-gen)"
 
-# Include a space separated string of default.nix attribute ami names here
-# Any attr names not included here will not be built by `ami-sync`
-# To build all names, set $AMI_FILTER to "all".  Examples follow:
-#export AMI_FILTER="all"
-export AMI_FILTER="cardano-node"
-#export AMI_FILTER="jormungandr-presync jormungandr-nosync"
+# The AMI_FILTER env variable provides a method to filter which AMI
+# images are built and syncronized by nix-build and ami-sync.  Modes of
+# behavior are:
+# 1) "default" which specifies what is declared in deploy-config.nix
+# 2) "all" which specifies all images that exist in default.nix
+# 3) "<image1> <image2> <...>" a space separated explicit AMI image list
+export AMI_FILTER="default"
 
 # Set the NIX_PATH
 export NIX_PATH="nixpkgs=$(nix eval '(import ./nix {}).path')"

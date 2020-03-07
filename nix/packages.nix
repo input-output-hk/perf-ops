@@ -23,6 +23,9 @@ in rec {
   filterFn = selected: imageName:
     if amiFilter == "all" then
       true
+    else if amiFilter == "default" then
+       let usedImages = (import ../config.nix { inherit lib pkgs; }).variable.usedImages.default;
+       in any (filterNames: imageName == filterNames) usedImages
     else
       any (filterNames: imageName == filterNames) (splitString " " selected);
 

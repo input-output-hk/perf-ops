@@ -111,10 +111,16 @@ in {
   resource.aws_security_group = listToAttrs (concatLists
     (mapAttrsToList (n: v: mkSecGroups v) deployConfig));
 
-  # Provide an exposed attr containing all per image utilized regions that other
+  # Provide an exposed attr containing all utilized images and regions that other
   # components of this repo may need to be aware of: .envrc, ami-sync
-  variable.usedRegions = {
-    type = "map";
-    default = mapAttrs' (n: v: nameValuePair v.name (attrNames v.regions)) deployConfig;
+  variable = {
+    usedImages = {
+      type = "list(string)";
+      default = mapAttrsToList (n: v: v.name) deployConfig;
+    };
+    usedRegions = {
+      type = "map";
+      default = mapAttrs' (n: v: nameValuePair v.name (attrNames v.regions)) deployConfig;
+    };
   };
 }
