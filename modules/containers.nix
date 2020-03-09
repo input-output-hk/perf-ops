@@ -10,16 +10,24 @@ in with lib; {
       moduleList = mkOption {
         type = types.listOf types.path;
         default = [ ];
-        description = " This parameter allows container module customization.";
-        example = "[ ./container-modules/jormungandr-container.nix ]";
+        description = "This parameter allows container module customization.";
+        example = "[ ./container-modules/jormungandr/modules/jormungandr.nix ]";
       };
 
       containerList = mkOption {
         type = types.listOf types.attrs;
-        default = [ ];
+        default = [ { containerName = "prebuild"; guestIp = "10.254.254.1"; } ];
         description = ''
-          This parameter allows container customization on a per server basis.
+          This parameter allows standard container customization on a per server
+          basis, using the modules defined in the moduleList parameter.
+          These containers are prebuilt on the deployer and building many may be
+          problematic from a resource standpoint of deployer RAM and CPU consumed.
+          It is preferable to build only a single standard container to get the
+          benefit of any eval or build errors and then to build a large quantity,
+          if desired, using the extraContainers parameter.  To this end, the
+          default is to build a single "prebuild" container using this approach.
           Note that container names cannot be more than 7 characters.
+          See the README.md for more information.
         '';
         example = ''
           [ { containerName = "c001"; guestIp = "10.254.1.1"; }
@@ -31,9 +39,27 @@ in with lib; {
         type = types.listOf types.attrs;
         default = [ ];
         description = ''
+          This parameter allows a large number of containers to be deployed
+          and built on a hosting server.  This approach eliminates constraints
+          of memory and CPU limits on the deployer encountered with large
+          numbers of building and deploying standard containers.
+          See the README.md for more information.
         '';
         example = ''
-        '';
+        [
+          {
+            name = "jormungandr-set-1";
+            entryFolder = "jormungandr";
+            entryFile = "container-wrapper.nix";
+            containerNamePrefix = "a";
+            hostAddress = "10.254.0.1";
+            network = "10.254.1";
+            containerCount = 2;
+            containerNameStartNum = 1;
+            ipStartAddr = 1;
+            useRecentState = true;
+          }
+        ]'';
       };
     };
   };
@@ -42,10 +68,11 @@ in with lib; {
     createPerformanceContainer = { containerName # The desired container name
       , hostIp ? "10.254.0.1" # The IPv4 host virtual eth nic IP
       , guestIp ? "10.254.1.1" # The IPv4 container guest virtual eth nic IP
+      , autostart ? false
       }: {
         name = containerName;
         value = {
-          autoStart = true;
+          autoStart = autostart;
           privateNetwork = true;
           hostAddress = hostIp;
           localAddress = guestIp;
@@ -60,21 +87,18 @@ in with lib; {
       };
     extraContainerServices = { name
                              , entryFile
+                             , entryFolder
                              , containerNamePrefix
                              , hostAddress
                              , network
                              , containerCount
                              , containerNameStartNum
                              , ipStartAddr
-                             , callPackageSetupName
-                             }@arg:
-    let
-      containerPackage = pkgs.callPackage (../extra-container-modules + "/${arg.callPackageSetupName}")
-                           { inherit extra-container; };
-    in {
-      name = arg.name;
+                             , useRecentState ? false
+                             }@arg: {
+      name = name;
       value = {
-        services."${arg.name}" = {
+        services."${name}" = {
           wantedBy = [ "multi-user.target" ];
           after = [ "apply-ec2-data" ];
           path = with pkgs; [ coreutils nix gnugrep gnutar gzip curl rsync ];
@@ -85,21 +109,41 @@ in with lib; {
             Type = "oneshot";
             RemainAfterExit = true;
           };
-          script = ''
-            ENTRYFILE="${arg.entryFile}"
-            NAME="${arg.containerNamePrefix}"
-            HOST_ADDRESS="${arg.hostAddress}"
-            NETWORK="${arg.network}"
-            IPADDR="${toString arg.ipStartAddr}"
-            SRCDIR="${containerPackage}"
-            # Sleep delay for qemu startup
+          script = let
+              nixRange = range containerNameStartNum
+                (containerNameStartNum + containerCount - 1);
+              endIpAddr = ipStartAddr + containerCount - 1;
+              bashRangeStart = fixNum containerNameStartNum;
+              bashRangeEnd = fixNum (containerNameStartNum + containerCount - 1);
+              containerDir = ../container-modules + "/${entryFolder}";
+              containerDirSet = pkgs.runCommand "containerDir-${name}" {
+                inherit hostAddress network;
+              } ''
+                set -e
+                cp -r ${containerDir} $out
+                chmod 0700 -R $out
+                export useRecentState="${if useRecentState then (toString 1) else (toString 0)}"
+                count="0"
+                for i in {${bashRangeStart}..${bashRangeEnd}}; do
+                  export name="${containerNamePrefix}$i"
+                  export ipaddr=$((${toString ipStartAddr} + count))
+                  substituteAll ${containerDir}/modules/${entryFile} \
+                                $out/modules/${name}-${containerNamePrefix}$i.nix
+                  count=$((count + 1))
+                done
+                set +e
+              '';
+            in ''
+            set -ex
+            # Sleep delay for qemu compatible startup startup
             sleep 10
-            for i in {${fixNum arg.containerNameStartNum}..${fixNum (arg.containerNameStartNum + arg.containerCount - 1)}}; do
-              "${containerPackage}"/create-extra-container.sh \
-                "$ENTRYFILE" "''${NAME}''${i}" "$HOST_ADDRESS" "$NETWORK" "$IPADDR" "$SRCDIR"
-              IPADDR=$(( IPADDR + 1 ))
-            done
-          '';
+            ${(concatStringsSep "\n" (flip map nixRange (i: let
+              containerInitFile = "${name}-${containerNamePrefix}${fixNum i}";
+            in ''
+              ${extra-container}/bin/extra-container create "${containerDirSet}/modules/${containerInitFile}.nix" --start
+            '')))}
+            set +ex
+            '';
         };
       };
     };

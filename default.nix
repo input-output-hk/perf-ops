@@ -5,67 +5,71 @@ in rec {
   images = {
     jormungandr = mkImage "jormungandr-v1" {
       host-modules = [
-        # ./container-modules/jormungandr-performance.nix
       ];
       container-modules = [
-        ./container-modules/container-common.nix
-        ./container-modules/jormungandr-container.nix
+        ./container-modules/jormungandr/modules/jormungandr.nix
       ];
       extra-containers = [
         {
           name = "jormungandr-set-1";
-          entryFile = "./container-modules/jormungandr.nix";
+          entryFolder = "jormungandr";
+          entryFile = "container-wrapper.nix";
           containerNamePrefix = "a";
           hostAddress = "10.254.0.1";
           network = "10.254.1";
-          containerCount = 1;
+          containerCount = 2;
+          #containerCount = 125;
           containerNameStartNum = 1;
           ipStartAddr = 1;
-          callPackageSetupName = "jormungandr.nix";
+          useRecentState = true;
         }
         {
           name = "jormungandr-set-2";
-          entryFile = "./container-modules/jormungandr.nix";
+          entryFolder = "jormungandr";
+          entryFile = "container-wrapper.nix";
           containerNamePrefix = "a";
           hostAddress = "10.254.0.1";
           network = "10.254.1";
-          containerCount = 1;
+          containerCount = 2;
+          #containerCount = 125;
           containerNameStartNum = 126;
           ipStartAddr = 126;
-          callPackageSetupName = "jormungandr.nix";
+          useRecentState = false;
         }
       ];
     };
     cardano-node = mkImage "cardano-node-v1" {
       host-modules = [
-        # ./container-modules/cardano-node-performance.nix
       ];
       container-modules = [
-        ./container-modules/container-common.nix
-        ./container-modules/cardano-node.nix
+        ./container-modules/cardano-node/modules/cardano-node.nix
       ];
       extra-containers = [
         {
           name = "cardano-node-set-1";
-          entryFile = "./container-modules/cardano-node.nix";
+          entryFolder = "cardano-node";
+          entryFile = "container-wrapper.nix";
           containerNamePrefix = "a";
           hostAddress = "10.254.0.1";
           network = "10.254.1";
-          containerCount = 1;
+          containerCount = 2;
+          #containerCount = 125;
           containerNameStartNum = 1;
           ipStartAddr = 1;
-          callPackageSetupName = "cardano-node.nix";
+          useRecentState = true;
         }
         {
           name = "cardano-node-set-2";
-          entryFile = "./container-modules/cardano-node.nix";
+          entryFolder = "cardano-node";
+          entryFile = "container-wrapper.nix";
           containerNamePrefix = "a";
           hostAddress = "10.254.0.1";
           network = "10.254.1";
-          containerCount = 1;
+          containerCount = 2;
+          #containerCount = 125;
           containerNameStartNum = 126;
           ipStartAddr = 126;
-          callPackageSetupName = "cardano-node.nix";
+          useRecentState = false;
         }
       ];
     };

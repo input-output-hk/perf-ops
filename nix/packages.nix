@@ -101,6 +101,7 @@ in rec {
                 };
                 services.openssh.enable = true;
                 services.mingetty.autologinUser = "root";
+                programs.bash.shellInit = "${pkgs.coreutils}/bin/stty cols 220 rows 50";
               });
             services.performance-containers.moduleList = container-modules;
             services.performance-containers.extraContainers = extra-containers;

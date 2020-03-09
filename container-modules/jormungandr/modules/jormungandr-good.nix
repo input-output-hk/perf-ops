@@ -1,9 +1,9 @@
 {
-  containers.CONTAINER_NAME = {
+  containers.@name@ = {
     privateNetwork = true;
     autoStart = true;
-    hostAddress = "HOST_ADDRESS";
-    localAddress = "NETWORK.IPADDR";
+    hostAddress = "@hostAddress@";
+    localAddress = "@network@.@ipaddr@";
 
     config = { pkgs, config, lib, ... }:
       let
@@ -41,9 +41,9 @@
           path = with pkgs; [ gnutar gzip ];
           preStart = ''
             [ -f /var/lib/${config.services.jormungandr.stateDir}/.setup-complete ] && exit 0
-            if ls -1 /nix/store/*-jormungandr-containers/recent-state.tgz > /dev/null; then
+            if ls -1 @out@/recent-state.tgz > /dev/null; then
               echo "Found recent state, restoring..."
-              tar -zxvf "$(ls -1 /nix/store/*-jormungandr-containers/recent-state.tgz | tr -d '\n')" \
+              tar -zxvf "$(ls -1 @out@/recent-state.tgz | tr -d '\n')" \
                 -C /var/lib/${config.services.jormungandr.stateDir}
               echo "Restored."
               touch /var/lib/${config.services.jormungandr.stateDir}/.setup-complete

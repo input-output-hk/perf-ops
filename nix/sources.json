@@ -1,16 +1,4 @@
 {
-    "cardano-node": {
-        "branch": "master",
-        "description": null,
-        "homepage": null,
-        "owner": "input-output-hk",
-        "repo": "cardano-node",
-        "rev": "33282c9d168b42bde2cf3838e041c98245d331d8",
-        "sha256": "01l3bnzg653winsfb6hy9r8v4ja4f3x43r2iv6qzps7kwsra8mr5",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/cardano-node/archive/33282c9d168b42bde2cf3838e041c98245d331d8.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "extra-container": {
         "branch": "master",
         "description": "Run declarative NixOS containers without full system rebuilds",
@@ -57,18 +45,6 @@
         "sha256": "1mvi9my31r68c218ph9zqmz8xk0mbxlfh9f3mx7g9wk3i7w1vvsv",
         "type": "tarball",
         "url": "https://github.com/input-output-hk/jormungandr-faucet/archive/73b675b4fe2092a7a20447c14437a0ccb4f57788.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "jormungandr-nix": {
-        "branch": "monitor-extra-stats",
-        "description": "jormungandr nix scripts",
-        "homepage": null,
-        "owner": "input-output-hk",
-        "repo": "jormungandr-nix",
-        "rev": "7e465d1e4a3c3af61e13cf98c09635654575fa5e",
-        "sha256": "06i8iy4rjgxzmqiy0giq8dbplz1668xni282kac4cb2v4yplxzdb",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/jormungandr-nix/archive/7e465d1e4a3c3af61e13cf98c09635654575fa5e.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "niv": {

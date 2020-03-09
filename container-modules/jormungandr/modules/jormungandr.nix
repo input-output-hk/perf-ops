@@ -1,11 +1,13 @@
-{ pkgs, config, lib, ... }:
-let
+{ pkgs, config, lib, ... }: let
   sources = import ../nix/sources.nix;
   default = import ../nix {};
   trustedPeers = __fromJSON (__readFile ./trusted_peers.json);
   jormungandrPkgs = default.jormungandrLib.environments.qa.packages;
 in {
-  imports = [ (sources.jormungandr-nix + "/nixos") ];
+  imports = [
+    (sources.jormungandr-nix + "/nixos")
+    ./container-common.nix
+  ];
   disabledModules = [ "services/networking/jormungandr.nix" ];
 
   system.extraDependencies = with default; [
