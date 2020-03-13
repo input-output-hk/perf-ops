@@ -1,81 +1,61 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -I nixpkgs=./nix -p awscli -p qemu -p crystal -i crystal
+# !nix-shell -I nixpkgs=./nix -p awscli -p qemu -p crystal -i crystal
 
 require "json"
 require "option_parser"
 
 HOME_REGION = "eu-west-1"
 ALL_REGIONS = %w[
-   eu-west-1 eu-west-2 eu-west-3 eu-central-1
-   us-east-1 us-east-2 us-west-1 us-west-2
-   ca-central-1
-   ap-southeast-1 ap-southeast-2 ap-northeast-1 ap-northeast-2
-   ap-south-1
-   sa-east-1
+  eu-west-1 eu-west-2 eu-west-3 eu-central-1
+  us-east-1 us-east-2 us-west-1 us-west-2
+  ca-central-1
+  ap-southeast-1 ap-southeast-2 ap-northeast-1 ap-northeast-2
+  ap-south-1
+  sa-east-1
 ]
-BUCKET = "iohk-amis"
+BUCKET        = "iohk-amis"
 BUCKET_REGION = "eu-west-1"
-
-module Common
-  def perf_uuid
+PERF_UUID     =
+  if ENV["PERF_UUIDF"]?
+    ENV["PERF_UUID"]
+  else
     file = "perf-uuid.txt"
-    if !ENV["PERF_UUIDF"]?.nil?
-      ENV["PERF_UUID"]
-    else
-      if File.exists?(file) && !File.empty?(file)
-        File.read(file).strip
-      else
-        "undefined"
-      end
-    end
-  end
 
-  def validate_regions(regions)
-    regions.each do |region|
-      raise "Error: #{region} is not a valid region" \
-        if !ALL_REGIONS.includes? region
+    if File.exists?(file) && !File.empty?(file)
+      File.read(file).strip
+    else
+      "undefined"
     end
   end
-end
-include Common
 
 module Shell
-  def shSilent!(cmd, *args)
-    output = IO::Memory.new
-    Process.run(cmd, args, output: output, error: STDERR).tap do |status|
-      raise "#{cmd} #{args} failed" unless status.success?
-    end
-    output.to_s.strip
-  end
-
   def sh!(cmd, *args)
     puts "$ #{cmd} #{args.to_a.join(" ")}"
+    shSilent!(cmd, *args)
+  end
+
+  def shSilent!(cmd, *args) : String
     output = IO::Memory.new
-    Process.run(cmd, args, output: output, error: STDERR).tap do |status|
-      raise "#{cmd} #{args} failed" unless status.success?
-    end
+    status = Process.run(cmd, args, output: output, error: STDERR)
+    raise "#{cmd} #{args} failed" unless status.success?
     output.to_s.strip
   end
 
   def sh(cmd, *args)
     puts "$ #{cmd} #{args.to_a.join(" ")}"
-    output = IO::Memory.new
-    status = Process.run(cmd, args, output: output, error: STDERR)
-    output.to_s.strip if status.success?
+    shSilent(cmd, *args)
   end
 
-  def shSilent(cmd, *args)
+  def shSilent(cmd, *args) : String?
     output = IO::Memory.new
     status = Process.run(cmd, args, output: output, error: STDERR)
     output.to_s.strip if status.success?
   end
 end
-extend Shell
 
 class ImageInfo
-
-  include Common
   include Shell
+  extend Shell
 
   JSON.mapping(
     label: String,
@@ -129,7 +109,7 @@ class ImageInfo
 
   def upload_all!(homeRegion, regions, force)
     home_image_id = upload_image(homeRegion, force)
-    (regions - [ homeRegion ]).each do |region|
+    (regions - [homeRegion]).each do |region|
       copied_image_id = copy_to_region region, homeRegion, home_image_id.not_nil!, force
     end
   end
@@ -163,10 +143,10 @@ class ImageInfo
 
       image.snapshot_id = wait_for_import(region, image.task_id.not_nil!)
       if ami_tag_output = sh!("aws", "ec2", "create-tags",
-        "--region", region,
-        "--resources", "#{image.snapshot_id}",
-        "--tags", "Key=Name,Value=\"#{name}\"",
-                  "Key=perf-ops,Value=\"#{perf_uuid}\"")
+           "--region", region,
+           "--resources", "#{image.snapshot_id}",
+           "--tags", "Key=Name,Value=\"#{name}\"",
+           "Key=perf-ops,Value=\"#{PERF_UUID}\"")
         puts "Snapshot tag successfully created"
       else
         puts "Snapshot tagging failed."
@@ -230,13 +210,13 @@ class ImageInfo
       puts
 
       if ami_tag_output = sh!("aws", "ec2", "create-tags",
-        "--region", region,
-        "--resources", "#{image.ami_id}",
-        "--tags", "Key=Name,Value=\"#{name}\"",
-                  "Key=perf-ops,Value=\"#{perf_uuid}\"",
-                  "Key=source-region,Value=\"#{region}\"",
-                  "Key=snapshot-id,Value=\"#{image.snapshot_id}\"",
-                  "Key=ami,Value=\"#{image.ami_id}\"")
+           "--region", region,
+           "--resources", "#{image.ami_id}",
+           "--tags", "Key=Name,Value=\"#{name}\"",
+           "Key=perf-ops,Value=\"#{PERF_UUID}\"",
+           "Key=source-region,Value=\"#{region}\"",
+           "Key=snapshot-id,Value=\"#{image.snapshot_id}\"",
+           "Key=ami,Value=\"#{image.ami_id}\"")
         puts "Snapshot tag successfully created"
       else
         puts "Snapshot tagging failed."
@@ -288,7 +268,7 @@ class ImageInfo
 
       case task.status
       when "active"
-        print ("%4s/100 : %s" % [task.progress, task.status_message]).ljust(60)+"\r"
+        print ("%4s/100 : %s" % [task.progress, task.status_message]).ljust(60) + "\r"
         sleep 10
       when "completed"
         puts
@@ -430,12 +410,12 @@ class ImageInfo
 
         # Create tags on the new remote backing snapshot
         if ami_tag_output = sh!("aws", "ec2", "create-tags",
-          "--region", region,
-          "--resources", "#{remote_snapshot_id}",
-          "--tags", "Key=Name,Value=\"#{name}\"",
-                    "Key=perf-ops,Value=\"#{perf_uuid}\"",
-                    "Key=source-region,Value=\"#{from_region}\"",
-                    "Key=ami,Value=\"#{image.ami_id}\"")
+             "--region", region,
+             "--resources", "#{remote_snapshot_id}",
+             "--tags", "Key=Name,Value=\"#{name}\"",
+             "Key=perf-ops,Value=\"#{PERF_UUID}\"",
+             "Key=source-region,Value=\"#{from_region}\"",
+             "Key=ami,Value=\"#{image.ami_id}\"")
           puts "Snapshot tagging successfully created for the remote backing snapshot"
         else
           puts "Snapshot tagging of the remote backing snapshot failed."
@@ -447,12 +427,12 @@ class ImageInfo
 
       # Create tags on the new remote ami
       if ami_tag_output = sh!("aws", "ec2", "create-tags",
-        "--region", region,
-        "--resources", "#{image.ami_id}",
-        "--tags", "Key=Name,Value=\"#{name}\"",
-                  "Key=perf-ops,Value=\"#{perf_uuid}\"",
-                  "Key=source-region,Value=\"#{from_region}\"",
-                  "Key=snapshot-id,Value=\"#{remote_snapshot_id}\"")
+           "--region", region,
+           "--resources", "#{image.ami_id}",
+           "--tags", "Key=Name,Value=\"#{name}\"",
+           "Key=perf-ops,Value=\"#{PERF_UUID}\"",
+           "Key=source-region,Value=\"#{from_region}\"",
+           "Key=snapshot-id,Value=\"#{remote_snapshot_id}\"")
         puts "Ami tag successfully created"
       else
         puts "Ami tagging of copied ami failed."
@@ -472,15 +452,15 @@ class ImageInfo
   class SnapshotDescribe
     class SnapshotResults
       JSON.mapping(
-        state: { type: String, key: "State" },
-        snapshotId: { type: String, key: "SnapshotId" }
+        state: {type: String, key: "State"},
+        snapshotId: {type: String, key: "SnapshotId"}
       )
     end
 
     JSON.mapping(
       matches: {
         type: Array(SnapshotResults),
-        key: "Snapshots"
+        key:  "Snapshots",
       }
     )
   end
@@ -562,7 +542,6 @@ class Registry
 end
 
 class ImageDescription
-
   class EbsDetails
     JSON.mapping(
       snapshot_id: {type: String?, key: "SnapshotId"},
@@ -575,8 +554,8 @@ class ImageDescription
 
   class BlockDeviceMappings
     JSON.mapping(
-        device_name: {type: String, key: "DeviceName"},
-        ebs: {type: EbsDetails?, key: "Ebs"}
+      device_name: {type: String, key: "DeviceName"},
+      ebs: {type: EbsDetails?, key: "Ebs"}
     )
   end
 
@@ -608,7 +587,7 @@ class ImageDescription
       ["s3", "rm",
        "--region", BUCKET_REGION,
        "--recursive",
-       "s3://#{BUCKET}/nix/store"
+       "s3://#{BUCKET}/nix/store",
       ], output: output, error: STDERR
     )
   end
@@ -631,7 +610,7 @@ class ImageDescription
         Process.run("aws",
           ["ec2", "describe-images",
            "--region", region,
-           "--filters", "Name=tag:perf-ops,Values=\"#{perf_uuid}\"",
+           "--filters", "Name=tag:perf-ops,Values=\"#{PERF_UUID}\"",
           ], output: output, error: STDERR
         )
       end
@@ -666,11 +645,11 @@ class ImageDescription
           ], output: output, error: STDERR
         )
       else
-        puts "Deleting perf-ops deploy \"#{perf_uuid}\" amis and snapshots from region #{region}"
+        puts "Deleting perf-ops deploy \"#{PERF_UUID}\" amis and snapshots from region #{region}"
         Process.run("aws",
           ["ec2", "describe-images",
            "--region", region,
-           "--filters", "Name=tag:perf-ops,Values=\"#{perf_uuid}\"",
+           "--filters", "Name=tag:perf-ops,Values=\"#{PERF_UUID}\"",
           ], output: output, error: STDERR
         )
       end
@@ -724,130 +703,184 @@ class ImageDescription
   end
 end
 
-# Main
-config = Hash(String, String).new
-sync = false
-force = false
-delete = false
-purge = false
-s3purge = false
+class Config
+  include Shell
 
-argvBackup = ARGV
+  getter options : OptionParser
+  property amis = [] of String
+  property regions = {} of String => Array(String)
+  property home_region = HOME_REGION
+  property s3purge = false
+  property purge = false
+  property delete = false
+  property force = false
+  property sync = false
 
-progParse = OptionParser.parse ARGV do |o|
-  o.banner = "Usage: ami-sync <[-s|--sync [optional args]] | [cleanup args]>"
-  o.separator("Deploy UUID: \"#{perf_uuid}\"" \
-    "#{if perf_uuid == "undefined" " [Define uuid in .envrc]" end}\n")
-  o.on("-s", "--sync", "Builds and syncs AMI images") { sync = true }
-  o.on("-h", "--help", "Show this help") { puts o; exit(0) }
-  o.separator("\n---- Sync optional args ----\n")
-  o.on("-n AMI_NAME(S)", "--names AMI_NAME(S)",
-    "AMI name(s) of the nix AMI attr(s) in default.nix as a string, space delimited for multiple; " \
-    "defaults to .envrc $AMI_FILTER behavior if not declared") \
-    { |names| config["names"] = names }
-  o.on("-r REGION(S)", "--regions REGION(S)",
-    "Region(s) for generated AMIs to be pushed to as a string, space delimited for multiple; " \
-    "defaults to deploy-config.nix region definitions if not declared") \
-    { |regions| config["regions"] = regions }
-  o.on("--home HOME",
-    "The home region to push AMI images to and then copy from into other target regions; " \
-    "defaults to \"#{HOME_REGION}\" if not declared") \
-    { |homeRegion| config["homeRegion"] = homeRegion }
-  o.on("-f", "--force", "Force push files, images, snapshots and AMI registrations, " \
-    "even if they already exist.") { force = true }
-  o.separator("\n------- Cleanup args -------\n")
-  o.separator("The following options are destructive and only one option can be called per CLI command.  " \
-     "A sync request also issued on the same cmd will be ignored.\n")
-  o.on("-d", "--delete", "Delete AMIs and snapshots used by this perf-ops deploy " \
-    "(uuid \"#{perf_uuid}\") across all regions accessible with the current aws credentials") \
-    { delete = true; }
-  o.on("--purge", "Delete AMIs and snapshots used by ALL perf-ops deploys across all regions " \
-    "accessible with the current aws credentials") { delete = true; purge = true }
-  o.on("--s3purge", "Delete *.vhd image paths and files in the s3 bucket, " \
-    "accessible with the current aws credentials, used to generate snapshots and AMIs") \
-    { s3purge = true; }
-end
+  def initialize
+    @options = options
+  end
 
-if !sync && !delete && !s3purge
-  puts progParse.to_s
-  exit(0)
-end
+  def set_defaults
+    set_amis if amis.empty?
+    set_regions if regions.empty?
+  end
 
-if s3purge
-  ImageDescription.s3delete
-  exit(0)
-end
+  private def set_amis
+    puts "Using $AMI_FILTER env default for AMI names to build"
+    nixJson = nix_instantiate "__attrNames (import ./.).amis"
+    @amis = Array(String).from_json(nixJson.to_s)
+  end
 
-if delete
-  ImageDescription.delete(purge)
-  exit(0)
-end
+  private def set_regions
+    puts "Using deploy-config.nix region definitions to push AMI targets"
+    nixJson = nix_instantiate <<-NIX
+      let
+        config = import ./config.nix {
+          pkgs = import ./nix {};
+        };
+      in
+        config.variable.usedRegions.default
+    NIX
+    @regions = Hash(String, Array(String)).from_json(nixJson.to_s)
+  end
 
-# Parse the --names CLI option
-puts
-if !config.has_key? "names"
-  puts "Using $AMI_FILTER env default for AMI names to build"
-  nixJson = sh("nix-instantiate", "--json", "--strict", "--eval", "-E", "__attrNames (import ./.).amis")
-  amis = Array(String).from_json(nixJson.to_s)
-else
-  puts "Using name arg from CLI for AMI attrs"
-  amis = config["names"].split
-end
-puts amis
+  private def nix_instantiate(code)
+    sh("nix-instantiate", "--json", "--strict", "--eval", "-E", code).to_s
+  end
 
-# Parse the --home CLI option
-puts
-if !config.has_key? "homeRegion"
-  puts "Using default home region of:"
-  homeRegion = HOME_REGION
-else
-  puts "Using \"home\" arg from CLI for home region:"
-  homeRegion = config["homeRegion"]
-end
-puts homeRegion
+  def validate_regions(regions)
+    regions.each do |region|
+      raise "Error: #{region} is not a valid region" \
+         if !ALL_REGIONS.includes? region
+    end
+  end
 
-# Parse the --regions CLI option
-puts
-if !config.has_key? "regions"
-  puts "Using deploy-config.nix region definitions to push AMI targets"
-  nixJson = sh("nix-instantiate", "--json", "--strict", "--eval", "-E",
-    "let pkgs = import <nixpkgs> {}; lib = pkgs.lib; " \
-    "in (import ./config.nix { inherit lib pkgs ; }).variable.usedRegions.default")
-  regions = Hash(String, Array(String)).from_json(nixJson.to_s)
-else
-  puts "Using \"region\" arg from CLI for per-image AMI region targets"
-  regions = Hash(String, Array(String)).new
-  amis.each do |ami|
-    regions[ami] = config["regions"].split
+  def apply!
+    if !sync && !delete && !s3purge
+      puts @options.to_s
+      exit(0)
+    end
+
+    if s3purge
+      ImageDescription.s3delete
+      exit(0)
+    end
+
+    if delete
+      ImageDescription.delete(purge)
+      exit(0)
+    end
+
+    set_defaults
+
+    pp! @amis
+    pp! @regions
+    pp! @home_region
+
+    if force
+      puts
+      puts "Force push CLI option selected"
+    end
+
+    puts
+    puts "AMI images to build and push: #{@amis}"
+    puts
+
+    puts "Building images..."
+    @amis.each do |ami|
+      validate_regions(regions[ami])
+      image = ImageInfo.prepare(ami)
+
+      puts <<-INFO
+      Image Details:
+        Name: #{image.name}
+        Description: #{image.description}
+        Size: #{image.logical_gigabytes}GB
+        System: #{image.system}
+        Amazon Arch: #{image.amazon_arch}
+      INFO
+      image.upload_all!(home_region, regions[ami], force)
+
+      puts
+    end
+  end
+
+  def options
+    OptionParser.parse ARGV do |o|
+      o.banner = "Usage: ami-sync <[-s|--sync [optional args]] | [cleanup args]>"
+
+      if PERF_UUID == "undefined"
+        o.separator("Deploy UUID: undefined [Define uuid in .envrc]")
+      else
+        o.separator(%(Deploy UUID: "#{PERF_UUID}"))
+      end
+
+      o.on("-s", "--sync", "Builds and syncs AMI images") { @sync = true }
+      o.on("-h", "--help", "Show this help") do
+        puts o
+        exit 0
+      end
+
+      o.separator("\n---- Sync optional args ----\n")
+
+      o.on("-n AMI_NAME(S)", "--names AMI_NAME(S)", <<-DOC) do |names|
+      AMI name(s) of the nix AMI attr(s) in default.nix as a string, space delimited for multiple;
+      defaults to .envrc $AMI_FILTER behavior if not declared
+    DOC
+        puts "Using name arg from CLI for AMI attrs"
+        @amis = names.split
+      end
+
+      o.on("-r REGION(S)", "--regions REGION(S)", <<-DOC) do |regions|
+      Region(s) for generated AMIs to be pushed to as a string, space delimited for multiple;
+      defaults to deploy-config.nix region definitions if not declared
+    DOC
+        puts %(Using "region" arg from CLI for per-image AMI region targets)
+        @regions = @amis.map { |ami|
+          {ami, regions.split}
+        }.to_h
+      end
+
+      o.on("--home HOME", <<-DOC) do |home_region|
+          The home region to push AMI images to and then copy from into other
+          target regions; defaults to "#{HOME_REGION}" if not declared
+        DOC
+        @home_region = home_region
+      end
+
+      o.on("-f", "--force", <<-DOC) do
+    Force push files, images, snapshots and AMI registrations, even if they already exist.
+  DOC
+        @force = true
+      end
+
+      o.separator("\n------- Cleanup args -------\n")
+
+      o.separator("The following options are destructive and only one option can be called per CLI command.  " \
+                  "A sync request also issued on the same cmd will be ignored.\n")
+
+      o.on("-d", "--delete", "Delete AMIs and snapshots used by this perf-ops deploy " \
+                             "(uuid \"#{PERF_UUID}\") across all regions accessible with the current aws credentials") { @delete = true }
+
+      o.on("--purge", <<-DOC) do
+      Delete AMIs and snapshots used by ALL perf-ops deploys across all regions
+      accessible with the current aws credentials
+    DOC
+        @delete = true
+        @purge = true
+      end
+
+      o.on("--s3purge", <<-DOC) do
+      Delete *.vhd image paths and files in the s3 bucket, accessible with the
+      current aws credentials, used to generate snapshots and AMIs
+    DOC
+        @s3purge = true
+      end
+    end
   end
 end
-puts regions
 
-if force
-  puts
-  puts "Force push CLI option selected"
-end
+# Main
+config = Config.new
 
-puts
-puts "AMI images to build and push: #{amis}"
-puts
-
-puts "Building images..."
-amis.each do |ami|
-  validate_regions(regions[ami])
-  image = ImageInfo.prepare(ami)
-
-  puts <<-INFO
-
-  Image Details:
-    Name: #{image.name}
-    Description: #{image.description}
-    Size: #{image.logical_gigabytes}GB
-    System: #{image.system}
-    Amazon Arch: #{image.amazon_arch}
-  INFO
-
-  image.upload_all!(homeRegion, regions[ami], force)
-
-  puts
-end
+config.apply!

@@ -9,7 +9,7 @@
   name = "ami-sync";
   version = "0.0.1";
   src = pkgs.lib.cleanSource ./.;
-  crystalBinaries.ami-sync.src = "./ami-sync.cr";
+  crystalBinaries.ami-sync.src = "./src/ami-sync.cr";
 
   buildInputs = [ makeWrapper ];
 

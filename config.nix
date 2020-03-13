@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ pkgs, lib ? pkgs.lib, ... }:
 let
   packages = (import ./nix { }).packages;
   inherit (packages) pp requireEnv;
