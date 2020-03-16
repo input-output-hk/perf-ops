@@ -100,7 +100,7 @@ in with lib; {
       value = {
         services."${name}" = {
           wantedBy = [ "multi-user.target" ];
-          after = [ "apply-ec2-data" ];
+          after = [ "apply-ec2-data.service" ];
           path = with pkgs; [ coreutils nix gnugrep gnutar gzip curl rsync ];
           environment = {
             NIX_PATH = "/root/.nix-defexpr/channels:nixpkgs=/run/current-system/nixpkgs";

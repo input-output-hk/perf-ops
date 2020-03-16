@@ -1,11 +1,12 @@
 # Performance Operations (perf-ops) Repository
 
 * The perf-ops repo exists to easily setup up software clients which can then be horizontally and vertically scaled for load testing purposes using AWS
+* As an example, this repository enables the rapid deployment of 10,000+ customized load clients across a number of AWS ec2 hosting servers distributed around the world
 * Initial AWS configuration of API keys, S3 buckets, IAM roles, trust permissions is beyond the scope of this document although some reference files exist in the examples directory
 
 ## Overview
 
-* The perf-ops repo uses nix for declarative creation of AWS AMI images which are then deployed via Terraform
+* The perf-ops repo uses [nix](https://nixos.org/nix/) for declarative creation of AWS AMI images which are then deployed via [Terraform](https://www.terraform.io/); [Terranix](https://terranix.org/) is used as the linker betwee nix and Terraform
 * A crystal compiled script is used to distribute AMI images to s3 and ec2 regions from a nix built vhd image
 * The general tooling flow is:
 
@@ -57,13 +58,15 @@ $ terraform init
 
 ## Configuring a load client
 
-* At this time, each host deployed using perf-ops can run a maximum of about 250 load clients before hitting a default dbus limit and assuming other constraints such as CPU, RAM and storage are sufficient for that number of load clients
-* Load clients can be generated in nixos containers on AWS hosts using either standard container generation which requires evaluation on the deployer during image build time or by generating containers on the hosts during provisioning post-boot time using an [extra-container](https://github.com/erikarvstedt/extra-container) method.  The issue with the former method is that a large number of containers tends to require a large amount of RAM and CPU time to generate the AMI on the deployer.  To address this, the perf-ops repo is configured to automatically build one standard nixos container with the load client to benefit from any eval or build errors at image build time and to then build the rest of the load client containers per host at host provisioning post-boot time.
-* To define a load client, a new directory under the container-modules subdirectory should be created with at least the minimum required files such as a load client niv pin directory and files, and a load client modules directory include a container-common.nix and container-wrapper.nix module.  The `container-modules/template` directory can be copied for this purpose.
-* The structure of the template directory and/or other load client directories in the container-modules directory can be examined to see how the load client module should be wrapped in, but from a high level here is what should be done:
+* At this time, each host deployed using perf-ops can run a maximum of about 250 load clients before hitting a default dbus limit, assuming other constraints such as CPU, RAM and storage are sufficient for that number of load clients.  The dbus limit may be addressed at a later date.
+* Load clients can be generated in nixos containers on AWS hosts using either standard container generation which requires evaluation on the deployer during image build time or by generating containers on the hosts during provisioning post-boot time using an [extra-container](https://github.com/erikarvstedt/extra-container) method.
+* The issue with the former method container generation method mentioned is that a large number of containers tends to require a large amount of RAM and CPU time to generate the host image on the deployer.
+* To address this, the perf-ops repo is configured to automatically build one standard nixos load client container to benefit from revealing any eval or build errors at image build time and to then build the rest of the load client containers per host at host provisioning post-boot time.
+* To define a load client, a new directory under the container-modules subdirectory should be created with at least the minimum required files such as a load client [niv](https://github.com/nmattia/niv) pin directory and files, and a load client modules directory including `container-common.nix` and `container-wrapper.nix` modules.  The `container-modules/template` directory can be copied and modified as needed for this purpose.
+* The structure of the template directory and/or other load client directories in the container-modules directory can be examined to see how the load client module should be wrapped, but from a high level perspective here is what should be done:
   * Call the load client module into `container-wrapper.nix`
   * Have the load client module import `container-common.nix`
-  * Have the load client module utilize niv for source pins as needed
+  * Have the load client module utilize [niv](https://github.com/nmattia/niv) for source pins as needed
 * If your SSH keys are not already included in the pre-defined keyset of the `modules/{ssh.nix,ssh-keys.nix}` files, you will need to modify those modules to include your SSH keys
 
 ## Configuring a load client image
@@ -96,7 +99,10 @@ $ terraform init
       # extra-container load clients will be spawned on the host during
       # provisioning post-boot time.  Each attribute set declared here
       # will create a seperate service on the host which will spawn the
-      # desired number of extra-container load clients
+      # desired number of extra-container load clients.  Multiple services
+      # can be used to declare different types of load or to build extra
+      # containers in parallel and bring load online faster after host
+      # provisioning.
       #
       extra-containers = [
         # Host service set 1
@@ -122,7 +128,7 @@ $ terraform init
           # The private network (first 3 octets) for container guests
           network = "10.254.1";
 
-          # The container count -- must be =< 250 due to dbus
+          # The container count -- must be =< 250 due to current dbus limit
           containerCount = 250;
 
           # Starting container number; will be padded to 3 digits
@@ -150,13 +156,15 @@ $ terraform init
 $ nix-build -A images.$IMAGE_NAME.qemuFull
 ```
 
-* Doing this will create a result file which when run will launch a qemu instance with a console interface through the current shell.  If needed, the qemu parameters can be customized from the `nix/packages.nix` file (search qemu-full).
+* Doing this will create a result file which when run will launch a qemu instance with a console interface through the current shell.  If needed, the qemu parameters can be customized from the `nix/packages.nix` file (search `qemu-full`).
 
 ## Creating a deployment configuration
 
-* Now that a load client and load client image have been create and declared, a deployment configuration can be made
-* Deployment configurations are declared in `deploy-config.nix` where each attribute set in this file is it's own deployment
-* Multiple deployments can be defined so as to easily customize load; for instance, one deployment could use an image with pre-synchronized chain clients which simulate steady-state load while another deployment could use clients requiring full chain sync simulating new network growth.  Each deployment can independently specify server type, regions, region-deployment count and security groups
+* Now that a load client and load client image have been created and declared, a deployment configuration can be made
+* Deployment configurations are declared in `deploy-config.nix` where each attribute set in this file is its own deployment
+* Multiple deployments can be defined so as to easily customize load
+* For instance, one deployment could use an image with pre-synchronized chain clients which simulate steady-state load while another deployment could use clients requiring full chain sync simulating new network growth
+* Each deployment can independently specify server type, regions, region-deployment count and security groups
 * An example deployment config follows where two deployments would be used in tandem to simulate a pre-existing network of steady-state client load plus new network growth client load:
 
 ```
@@ -224,18 +232,18 @@ $ nix-build -A images.$IMAGE_NAME.qemuFull
 $ ami-sync --sync
 ```
 
-* The ami-sync script will [re-]build the images that are declared in the deployment configuration file, deploy-config.nix, push them to the s3 iohk-amis bucket if they are not already there, and generate any required snapshots and AMI images in each region defined in deploy-config.nix if they do not already exist
+* The ami-sync script will [re-]build the images that are declared in the deployment configuration file, `deploy-config.nix`, push them to the s3 `iohk-amis` bucket if they are not already there, and generate any required snapshots and AMI images in each region defined in deploy-config.nix if they do not already exist
 
-* Unwanted AMI images, snapshots and s3 bucket items can be easily cleaned up once perf-ops testing is complete, either at a per-deployment level or a global perf-ops level.  See the ami-sync script help output for more details (`ami-sync --help`).
+* Unwanted AMI images, snapshots and s3 bucket items can be easily cleaned up once perf-ops testing is complete, either at a per-deployment level or a global perf-ops level.  See the ami-sync script help output for more details: `ami-sync --help`
 
 * Note that typically at least a few minutes is required from the time the ami-sync script completes AMI distribution to the time they are actually usable in all regions.
 
 ## Generating Terraform JSON with Terranix
 
-* Prior to utilizing terraform, terraform JSON needs to be generated from the nix.  This can be accomplished by running the following command (see the `Notes` section of this readme for why the `jq` portion of the command is needed):
+* Prior to utilizing terraform, terraform JSON needs to be generated from the nix.  This can be accomplished by running the following command:
 
 ```
-$ terranix | jq 'walk(if . == "null" then null else . end)' | tee config.tf.json
+$ terranix --with-nulls | tee config.tf.json
 ```
 
 ## Deploying the deployments
@@ -252,7 +260,7 @@ $ terraform apply
 $ terraform destroy
 ```
 
-* See the [terraform documentation](https://www.terraform.io/docs/) for further details on terraform usage
+* See the [Terraform documentation](https://www.terraform.io/docs/) for further details on terraform usage
 
 
 ## Reference Perf-Ops Repo Layout
@@ -262,8 +270,8 @@ $ terraform destroy
 ```
 .
 ├── .envrc                                 # The .envrc config file (see examples dir for template)*
-├── config.nix                             # The nix setup file used by terranix
-├── config.tf.json                         # The terranix generated JSON after running against config.nix*
+├── config.nix                             # The nix setup file used by Terranix
+├── config.tf.json                         # The Terranix generated JSON after running against config.nix*
 ├── container-modules                      # Guest-only container modules
 │   └── template                           # An example load client directory
 │       ├── modules                        # Example modules for the load client
@@ -295,7 +303,7 @@ $ terraform destroy
 │   ├── sources.json                       # Perf-ops niv pin state file
 │   └── sources.nix                        # Perf-ops niv nix file
 ├── perf-uuid.txt                          # A per deployer UUID file typically generated by .envrc, direnv/Lorri*
-├── providers.tf                           # A terraform to AWS infrastructure mapping definition file
+├── providers.tf                           # A Terraform to AWS infrastructure mapping definition file
 ├── README.md                              # This file
 ├── resources                              # Supplementary nix resource files, such as security groups
 │   └── sg                                 # Security group resource directory
@@ -309,12 +317,6 @@ $ terraform destroy
 ```
 
 ## Notes
-
-### Terranix null requirement
-
-* When using JSON format for terraform, some terraform attributes need to be set to null, even when the docs shows as optional [Ref](https://github.com/terraform-providers/terraform-provider-aws/issues/8786#issuecomment-496935442)
-* Terranix strips out null attrs which causes a problem with some resources
-* This is the reason for the `jq` portion of the command shown in the `Generating Terraform JSON with Terranix` section
 
 ### Minimal monitoring
 

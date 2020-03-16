@@ -17,46 +17,22 @@
         "homepage": null,
         "owner": "input-output-hk",
         "repo": "iohk-nix",
-        "rev": "61040cdb5127c72c8563ce743b2f13189d2f09f7",
-        "sha256": "01rbp5nlqxw26mx3f36vm2sc1cg15anga7hmfj7yd6fnrlhcgqfy",
+        "rev": "30cf81c421d7fca198660e1e995038dd8b6f3d13",
+        "sha256": "0sy9gza5gsrbqfbizp0dd98njnymigchj0aszswkfzxndskknarj",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/iohk-nix/archive/61040cdb5127c72c8563ce743b2f13189d2f09f7.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "iohk-ops": {
-        "branch": "master",
-        "description": "NixOps deployment configuration for IOHK devops",
-        "homepage": "",
-        "owner": "input-output-hk",
-        "repo": "iohk-ops",
-        "rev": "e8f6fa58f3717cf6db64f268cfefcd30413bd3f0",
-        "sha256": "0ss414zla7cakiafdq3m19zsbi1p876l8lsamdga65dqbmq2qfn1",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/iohk-ops/archive/e8f6fa58f3717cf6db64f268cfefcd30413bd3f0.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "jormungandr-faucet": {
-        "branch": "master",
-        "description": "faucet for jormungandr",
-        "homepage": null,
-        "owner": "input-output-hk",
-        "repo": "jormungandr-faucet",
-        "rev": "73b675b4fe2092a7a20447c14437a0ccb4f57788",
-        "sha256": "1mvi9my31r68c218ph9zqmz8xk0mbxlfh9f3mx7g9wk3i7w1vvsv",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/jormungandr-faucet/archive/73b675b4fe2092a7a20447c14437a0ccb4f57788.tar.gz",
+        "url": "https://github.com/input-output-hk/iohk-nix/archive/30cf81c421d7fca198660e1e995038dd8b6f3d13.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "jormungandr-nix": {
-        "branch": "monitor-extra-stats",
+        "branch": "master",
         "description": "jormungandr nix scripts",
         "homepage": null,
         "owner": "input-output-hk",
         "repo": "jormungandr-nix",
-        "rev": "7e465d1e4a3c3af61e13cf98c09635654575fa5e",
-        "sha256": "06i8iy4rjgxzmqiy0giq8dbplz1668xni282kac4cb2v4yplxzdb",
+        "rev": "c261833a41fd7c7bb2c68ce0c628b28b92a7795e",
+        "sha256": "07rhhm2abh8mv0f4737qzdrhjbhaa3hbck8wv071417fk143a9kd",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/jormungandr-nix/archive/7e465d1e4a3c3af61e13cf98c09635654575fa5e.tar.gz",
+        "url": "https://github.com/input-output-hk/jormungandr-nix/archive/c261833a41fd7c7bb2c68ce0c628b28b92a7795e.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "niv": {
@@ -71,42 +47,6 @@
         "url": "https://github.com/nmattia/niv/archive/1dd094156b249586b66c16200ecfd365c7428dc0.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
-    "nixops-core": {
-        "branch": "nixops-core-pr-int",
-        "description": "NixOps, the NixOS-based cloud deployment tool",
-        "homepage": "http://nixos.org/",
-        "owner": "input-output-hk",
-        "repo": "nixops",
-        "rev": "28dd42a2dc9f6bada1ea587de80cde8dae0ddbf0",
-        "sha256": "0a74c8f0hpb60s91f3igx63zx8amblp3iqr6ic3fdr28nvmvbhgr",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/nixops/archive/28dd42a2dc9f6bada1ea587de80cde8dae0ddbf0.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "nixops-libvirtd": {
-        "branch": "master",
-        "description": "NixOps libvirtd backend plugin [maintainer=@AmineChikhaoui]",
-        "homepage": "",
-        "owner": "nix-community",
-        "repo": "nixops-libvirtd",
-        "rev": "1c29f6c716dad9ad58aa863ebc9575422459bf95",
-        "sha256": "0g2ag4mhgrxws3h4q8cvfh4ks1chgpjm018ayqd48lagyvi32l8m",
-        "type": "tarball",
-        "url": "https://github.com/nix-community/nixops-libvirtd/archive/1c29f6c716dad9ad58aa863ebc9575422459bf95.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "nixops-packet": {
-        "branch": "c2-medium-reserved-changes",
-        "description": "NixOps Packet.net Plugin",
-        "homepage": null,
-        "owner": "input-output-hk",
-        "repo": "nixops-packet",
-        "rev": "b96a78c57d315bb292318f7fb4f198b1483e188b",
-        "sha256": "15b7x6rilhmg42wmprqjaqadwcn8351a4wkf76m90rfqsk1piw64",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/nixops-packet/archive/b96a78c57d315bb292318f7fb4f198b1483e188b.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "nixpkgs": {
         "branch": "nixos-19.09",
         "description": "Nix Packages collection",
@@ -117,42 +57,6 @@
         "sha256": "17zsqhaf098bvcfarnq0h9601z6smkfd1kz1px6xfg6xqfmr80r7",
         "type": "tarball",
         "url": "https://github.com/NixOS/nixpkgs-channels/archive/c49da6435f314e04fc58ca29807221817ac2ac6b.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "nixpkgs-unstable": {
-        "branch": "nixpkgs-unstable",
-        "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
-        "homepage": "https://github.com/NixOS/nixpkgs",
-        "owner": "NixOS",
-        "repo": "nixpkgs-channels",
-        "rev": "57ed5db343f7883c90c8a5a6b771216690842723",
-        "sha256": "09hxg4s6ppx4jwh4l4prhicpglfbcw7x9yy50pi0d948saxdk52m",
-        "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs-channels/archive/57ed5db343f7883c90c8a5a6b771216690842723.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "ops-lib": {
-        "branch": "master",
-        "description": "NixOps deployment configuration library for IOHK devops ",
-        "homepage": null,
-        "owner": "input-output-hk",
-        "repo": "ops-lib",
-        "rev": "e436e272a30a41a85293c24475d3d81c3a260ccb",
-        "sha256": "1hlpbg55mzlq53bkjlrdk43a1ci3z9akmza7r6qc1mgg0bp6xsjh",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/ops-lib/archive/e436e272a30a41a85293c24475d3d81c3a260ccb.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "terranix": {
-        "branch": "master",
-        "description": "terranix is a terraform.json generator with a nix-like feeling",
-        "homepage": "https://terranix.org/",
-        "owner": "mrVanDalo",
-        "repo": "terranix",
-        "rev": "e387612dd7386a1950d88ec1ba6bde92010d3591",
-        "sha256": "1frrbjhisw5sb15j30nh5bffa5lsm9fvq18v8gxnl7wd8zpk0fxy",
-        "type": "tarball",
-        "url": "https://github.com/mrVanDalo/terranix/archive/e387612dd7386a1950d88ec1ba6bde92010d3591.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

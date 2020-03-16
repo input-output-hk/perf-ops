@@ -23,30 +23,6 @@
         "url": "https://github.com/input-output-hk/iohk-nix/archive/61040cdb5127c72c8563ce743b2f13189d2f09f7.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
-    "iohk-ops": {
-        "branch": "master",
-        "description": "NixOps deployment configuration for IOHK devops",
-        "homepage": "",
-        "owner": "input-output-hk",
-        "repo": "iohk-ops",
-        "rev": "e8f6fa58f3717cf6db64f268cfefcd30413bd3f0",
-        "sha256": "0ss414zla7cakiafdq3m19zsbi1p876l8lsamdga65dqbmq2qfn1",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/iohk-ops/archive/e8f6fa58f3717cf6db64f268cfefcd30413bd3f0.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "jormungandr-faucet": {
-        "branch": "master",
-        "description": "faucet for jormungandr",
-        "homepage": null,
-        "owner": "input-output-hk",
-        "repo": "jormungandr-faucet",
-        "rev": "73b675b4fe2092a7a20447c14437a0ccb4f57788",
-        "sha256": "1mvi9my31r68c218ph9zqmz8xk0mbxlfh9f3mx7g9wk3i7w1vvsv",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/jormungandr-faucet/archive/73b675b4fe2092a7a20447c14437a0ccb4f57788.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "niv": {
         "branch": "master",
         "description": "Easy dependency management for Nix projects",
@@ -132,15 +108,15 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "terranix": {
-        "branch": "master",
+        "branch": "2.2.2",
         "description": "terranix is a terraform.json generator with a nix-like feeling",
         "homepage": "https://terranix.org/",
         "owner": "mrVanDalo",
         "repo": "terranix",
-        "rev": "e387612dd7386a1950d88ec1ba6bde92010d3591",
-        "sha256": "1frrbjhisw5sb15j30nh5bffa5lsm9fvq18v8gxnl7wd8zpk0fxy",
+        "rev": "dfbf4d1fae08da8052ff880c5d02b2eb5857d54c",
+        "sha256": "1qilbvldlq7ybxa3yx99hb8vbmj0sk5x9qqxa4f1czpzj2mja0fn",
         "type": "tarball",
-        "url": "https://github.com/mrVanDalo/terranix/archive/e387612dd7386a1950d88ec1ba6bde92010d3591.tar.gz",
+        "url": "https://github.com/mrVanDalo/terranix/archive/dfbf4d1fae08da8052ff880c5d02b2eb5857d54c.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }
