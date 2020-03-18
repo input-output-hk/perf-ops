@@ -1,4 +1,16 @@
 {
+    "cardano-node": {
+        "branch": "1.8.0",
+        "description": null,
+        "homepage": null,
+        "owner": "input-output-hk",
+        "repo": "cardano-node",
+        "rev": "64c2778c61245dcda13eaf16a2e0738dfacb7a16",
+        "sha256": "1aybhbip4j9275npvrk4w0bch5bl7fbq8faj1qj8h51f1g0ja74l",
+        "type": "tarball",
+        "url": "https://github.com/input-output-hk/cardano-node/archive/64c2778c61245dcda13eaf16a2e0738dfacb7a16.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "extra-container": {
         "branch": "master",
         "description": "Run declarative NixOS containers without full system rebuilds",
@@ -9,18 +21,6 @@
         "sha256": "0qr41mma2iwxckdhqfabw3vjcbp2ffvshnc3k11kwriwj14b766v",
         "type": "tarball",
         "url": "https://github.com/erikarvstedt/extra-container/archive/6cced2c26212cc1c8cc7cac3547660642eb87e71.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "cardano-node": {
-        "branch": "master",
-        "description": null,
-        "homepage": null,
-        "owner": "input-output-hk",
-        "repo": "cardano-node",
-        "rev": "33282c9d168b42bde2cf3838e041c98245d331d8",
-        "sha256": "01l3bnzg653winsfb6hy9r8v4ja4f3x43r2iv6qzps7kwsra8mr5",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/cardano-node/archive/33282c9d168b42bde2cf3838e041c98245d331d8.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "iohk-nix": {

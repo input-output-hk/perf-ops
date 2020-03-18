@@ -40,7 +40,10 @@ in rec {
                 (sources.nixpkgs
                   + "/nixos/maintainers/scripts/ec2/amazon-image.nix")
                 {
-                  amazonImage.name = name;
+                  amazonImage = {
+                    name = name;
+                    sizeMB = 16384;
+                  };
                   systemd.services."apply-ec2-data".path = with pkgs; [
                     # If a bash ec2 user-data script is executing, add
                     # required command packages to the path here

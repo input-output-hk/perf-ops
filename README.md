@@ -6,7 +6,7 @@
 
 ## Overview
 
-* The perf-ops repo uses [nix](https://nixos.org/nix/) for declarative creation of AWS AMI images which are then deployed via [Terraform](https://www.terraform.io/); [Terranix](https://terranix.org/) is used as the linker betwee nix and Terraform
+* The perf-ops repo uses [nix](https://nixos.org/nix/) for declarative creation of AWS AMI images which are then deployed via [Terraform](https://www.terraform.io/); [Terranix](https://terranix.org/) is used as the linker between nix and Terraform
 * A crystal compiled script is used to distribute AMI images to s3 and ec2 regions from a nix built vhd image
 * The general tooling flow is:
 

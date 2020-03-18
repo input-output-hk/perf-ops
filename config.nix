@@ -37,13 +37,19 @@ let
       # non-EBS local nvme[1-9]n1 ephemeral block storage devices, ex: c5, g4, i3, m5, r5, x1, z1.
       set -x
       mapfile -t DEVS < <(find /dev -maxdepth 1 -regextype posix-extended -regex ".*/nvme[1-9]n1")
-      mdadm --create --verbose --auto=yes /dev/md0 --level=0 --raid-devices="$${#DEVS[@]}" "$${DEVS[@]}"
-      mkfs.ext4 /dev/md0
+      [ "$${#DEVS[@]}" -eq "0" ] && { echo "No additional NVME found, exiting."; exit 0; }
       if [ -d /var/lib/containers ]; then
         mv /var/lib/containers /var/lib/containers-backup
       fi
       mkdir -p /var/lib/containers
-      mount /dev/md0 /var/lib/containers
+      if [ "$${#DEVS[@]}" -gt "1" ]; then
+        mdadm --create --verbose --auto=yes /dev/md0 --level=0 --raid-devices="$${#DEVS[@]}" "$${DEVS[@]}"
+        mkfs.ext4 /dev/md0
+        mount /dev/md0 /var/lib/containers
+      elif [ "$${#DEVS[@]}" -eq "1" ]; then
+        mkfs.ext4 "$${DEVS[@]}"
+        mount "$${DEVS[@]}" /var/lib/containers
+      fi
       if [ -d /var/lib/containers-backup ]; then
         mv /var/lib/containers-backup/* /var/lib/containers/
       fi
@@ -56,6 +62,7 @@ let
                , spot_price ? null
                , tags ? null
                , wait_for_fulfillment ? true
+               , timeouts ? { create = "20s"; }
                , ... }@config:
     name: securityGroups: region: count:
   let
@@ -72,8 +79,14 @@ let
       provider = regionToProvider region;
       provisioner."local-exec" = provSpotCmd region spotName;
       tags = if (tags != null) then tags else { Name = "${name}-${uuid}"; };
-    } // removeAttrs config
-      [ "instance_type" "root_block_device" "spot_price" "tags" "wait_for_fulfillment" ];
+    } // removeAttrs config [
+      "instance_type"
+      "root_block_device"
+      "spot_price"
+      "tags"
+      "wait_for_fulfillment"
+      "timeouts"
+    ];
   };
 
   deployConfig = import ./deploy-config.nix { inherit userDataScripts; };
