@@ -95,6 +95,7 @@ in with lib; {
                              , containerNameStartNum
                              , ipStartAddr
                              , useRecentState ? false
+                             , autoStart ? true
                              }@arg: {
       name = name;
       value = {
@@ -140,7 +141,7 @@ in with lib; {
             ${(concatStringsSep "\n" (flip map nixRange (i: let
               containerInitFile = "${name}-${containerNamePrefix}${fixNum i}";
             in ''
-              ${extra-container}/bin/extra-container create "${containerDirSet}/modules/${containerInitFile}.nix" --start
+              ${extra-container}/bin/extra-container create "${containerDirSet}/modules/${containerInitFile}.nix" ${if autoStart then "--start" else ""}
             '')))}
             set +ex
             '';

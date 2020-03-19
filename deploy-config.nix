@@ -5,7 +5,11 @@
   # Due to dbus limits, 256 is currently the largest number of containers per host
   # until the dbus limit is addressed.
   #
-  # For cardano-node v1.7.0 on staging-shelley with recent state, at ~100 MB RAM per
+  # In general, the ec2 host server sizing for the load client containers
+  # will need to be tuned for your use case.  The following notes, however,
+  # provide some examples and guidance as a starting point.
+  #
+  # For cardano-node v1.8.0 on staging-shelley with recent state, at ~100 MB RAM per
   # node initially, 256 MB/node should give sufficient memory for short load runtimes
   # so min 64 GB RAM -- r5d.2xlarge should also be plenty sufficient here (64 GB RAM)
   # instance_type = "r5d.2xlarge";

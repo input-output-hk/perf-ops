@@ -62,6 +62,7 @@ let
                , spot_price ? null
                , tags ? null
                , wait_for_fulfillment ? true
+               , spot_type ? "one-time"
                , timeouts ? { create = "20s"; }
                , ... }@config:
     name: securityGroups: region: count:
@@ -85,6 +86,7 @@ let
       "spot_price"
       "tags"
       "wait_for_fulfillment"
+      "spot_type"
       "timeouts"
     ];
   };
