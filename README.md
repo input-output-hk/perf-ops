@@ -326,3 +326,20 @@ $ terraform destroy
 ```
 $ ssh -i $SSH_KEY -L 19999:127.0.0.1:19999 root@$HOST_IP
 ```
+
+### Command and control
+
+* [Parallel SSH](https://github.com/lilydjwg/pssh) can be utilized to issue commands to some or all hosts and/or their respective load clients in order to very quickly control load behavior.
+* With an SSH agent loaded and appropriate ssh key added to the agent, some example pssh commands which can be customized for your use case as needed are:
+
+```
+# Count all running load containers on each host
+pssh -v --hosts <(terraform refresh > /dev/null; terraform show -no-color | grep "public_ip " | awk '{ print $3 }' | tr -d '"') \
+  --user root --par 60 --timeout 0 --inline -x "-o StrictHostKeyChecking=no -o ConnectTimeout=2 -o LogLevel=QUIET" \
+  -- "nixos-container list | head -n -1 | xargs -I{} nixos-container status {} | sort | uniq -c | grep up"
+
+# Start the load service of NNN containers on each host, where NNN is the numeric portion of the ending container name index per host
+pssh -v --hosts <(terraform refresh > /dev/null; terraform show -no-color | grep "public_ip " | awk '{ print $3 }' | tr -d '"') \
+  --user root --par 60 --timeout 0 --inline -x "-o StrictHostKeyChecking=no -o ConnectTimeout=2 -o LogLevel=QUIET" \
+  -- 'for x in {001..NNN}; do nixos-container run a$x -- systemctl start cardano-node; done'
+```
