@@ -11,18 +11,6 @@
         "url": "https://github.com/erikarvstedt/extra-container/archive/6cced2c26212cc1c8cc7cac3547660642eb87e71.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
-    "iohk-nix": {
-        "branch": "master",
-        "description": "nix scripts shared across projects",
-        "homepage": null,
-        "owner": "input-output-hk",
-        "repo": "iohk-nix",
-        "rev": "61040cdb5127c72c8563ce743b2f13189d2f09f7",
-        "sha256": "01rbp5nlqxw26mx3f36vm2sc1cg15anga7hmfj7yd6fnrlhcgqfy",
-        "type": "tarball",
-        "url": "https://github.com/input-output-hk/iohk-nix/archive/61040cdb5127c72c8563ce743b2f13189d2f09f7.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "niv": {
         "branch": "master",
         "description": "Easy dependency management for Nix projects",
