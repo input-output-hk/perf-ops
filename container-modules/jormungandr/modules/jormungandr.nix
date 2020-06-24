@@ -1,8 +1,8 @@
 { pkgs, config, lib, ... }: let
   sources = import ../nix/sources.nix;
   default = import ../nix {};
-  trustedPeers = __fromJSON (__readFile ./trusted_peers.json);
-  jormungandrPkgs = default.jormungandrLib.environments.qa.packages;
+  trustedPeers = default.jormungandrLib.environments.qa.trustedPeers;
+  jormungandrPkgs = default.jormungandrLib.packages.v0_9_0;
 in {
   imports = [
     (sources.jormungandr-nix + "/nixos")

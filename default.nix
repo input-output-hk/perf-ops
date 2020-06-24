@@ -22,6 +22,7 @@ in rec {
           containerNameStartNum = 1;
           ipStartAddr = 1;
           useRecentState = true;
+          autoStart = false;
         }
         {
           name = "jormungandr-set-2";
@@ -34,7 +35,8 @@ in rec {
           #containerCount = 125;
           containerNameStartNum = 126;
           ipStartAddr = 126;
-          useRecentState = false;
+          useRecentState = true;
+          autoStart = false;
         }
       ];
     };

@@ -89,10 +89,10 @@
         "homepage": null,
         "owner": "input-output-hk",
         "repo": "ops-lib",
-        "rev": "e436e272a30a41a85293c24475d3d81c3a260ccb",
-        "sha256": "1hlpbg55mzlq53bkjlrdk43a1ci3z9akmza7r6qc1mgg0bp6xsjh",
+        "rev": "bbb168d4db854d4c97e2bb32f0898345e20aea55",
+        "sha256": "04azcsbvdqwhmk5v01i4fjsqcblzxmiczbps15a6xzwiq0wnp0yz",
         "type": "tarball",
-        "url": "https://github.com/input-output-hk/ops-lib/archive/e436e272a30a41a85293c24475d3d81c3a260ccb.tar.gz",
+        "url": "https://github.com/input-output-hk/ops-lib/archive/bbb168d4db854d4c97e2bb32f0898345e20aea55.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "terranix": {
